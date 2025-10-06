@@ -34,16 +34,12 @@ func handleMain(w http.ResponseWriter, r *http.Request) {
 	}
 	urlParams := strings.Split(r.URL.Path[1:], "/")
 
-	if len(urlParams) < 4 || urlParams[0] != "update" {
+	if len(urlParams) < 4 {
 		http.Error(w, "Not fount", http.StatusNotFound)
 		return
 	}
 
 	type_, metricName, merticValueStr := urlParams[1], urlParams[2], urlParams[3]
-	if type_ != Gauge && type_ != Counter {
-		http.Error(w, "Bad request", http.StatusBadRequest)
-		return
-	}
 
 	switch type_ {
 	case Gauge:
@@ -71,7 +67,7 @@ func handleMain(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", handleMain)
+	mux.HandleFunc("/update/", handleMain)
 	err := http.ListenAndServe(`:8080`, mux)
 	if err != nil {
 		panic(":(")

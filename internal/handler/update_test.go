@@ -1,10 +1,11 @@
-package main
+package handler
 
 import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/f044fs3t5w3f/metrics/internal/models"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -86,16 +87,16 @@ func TestHandleUpdate(t *testing.T) {
 		},
 	}
 
-	storage := memStorage{
-		gauge:   make(map[string]float64),
-		counter: make(map[string]int64),
+	storage := models.MemStorage{
+		Gauge:   make(map[string]float64),
+		Counter: make(map[string]int64),
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			request := httptest.NewRequest(test.request.method, test.request.url, nil)
 			w := httptest.NewRecorder()
-			handleUpdate(storage)(w, request)
+			Update(storage)(w, request)
 			res := w.Result()
 			assert.Equal(t, test.want.code, res.StatusCode)
 		})

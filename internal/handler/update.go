@@ -1,17 +1,14 @@
-package main
+package handler
 
 import (
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/f044fs3t5w3f/metrics/internal/models"
 )
 
-const (
-	Gauge   = "gauge"
-	Counter = "counter"
-)
-
-func handleUpdate(storage memStorage) http.HandlerFunc {
+func Update(storage models.MemStorage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		method := r.Method
 		if method != http.MethodPost {
@@ -29,23 +26,23 @@ func handleUpdate(storage memStorage) http.HandlerFunc {
 		type_, metricName, merticValueStr := urlParams[1], urlParams[2], urlParams[3]
 
 		switch type_ {
-		case Gauge:
+		case models.Gauge:
 			merticParsed, err := strconv.ParseFloat(merticValueStr, 64)
 			if err != nil {
 				http.Error(w, "Bad request", http.StatusBadRequest)
 				return
 			}
-			storage.gauge[metricName] = merticParsed
-		case Counter:
+			storage.Gauge[metricName] = merticParsed
+		case models.Counter:
 			merticParsed, err := strconv.ParseInt(merticValueStr, 0, 64)
 			if err != nil {
 				http.Error(w, "Bad request", http.StatusBadRequest)
 				return
 			}
-			if _, ok := storage.counter[metricName]; !ok {
-				storage.counter[metricName] = 0
+			if _, ok := storage.Counter[metricName]; !ok {
+				storage.Counter[metricName] = 0
 			}
-			storage.counter[metricName] += merticParsed
+			storage.Counter[metricName] += merticParsed
 		default:
 			http.Error(w, "Bad request", http.StatusBadRequest)
 			return

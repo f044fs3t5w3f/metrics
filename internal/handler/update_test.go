@@ -98,6 +98,7 @@ func TestHandleUpdate(t *testing.T) {
 			w := httptest.NewRecorder()
 			Update(storage)(w, request)
 			res := w.Result()
+			res.Body.Close()
 			assert.Equal(t, test.want.code, res.StatusCode)
 		})
 	}

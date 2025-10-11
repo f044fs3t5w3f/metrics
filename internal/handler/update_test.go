@@ -5,7 +5,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/f044fs3t5w3f/metrics/internal/models"
+	"github.com/f044fs3t5w3f/metrics/internal/repository"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -87,10 +87,7 @@ func TestHandleUpdate(t *testing.T) {
 		},
 	}
 
-	storage := models.MemStorage{
-		Gauge:   make(map[string]float64),
-		Counter: make(map[string]int64),
-	}
+	storage := repository.NewMemStorage()
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {

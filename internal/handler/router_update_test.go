@@ -11,6 +11,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+type request struct {
+	method string
+	url    string
+}
+
 func testRequest(t *testing.T, ts *httptest.Server, method,
 	path string) (*http.Response, string) {
 	req, err := http.NewRequest(method, ts.URL+path, nil)
@@ -26,11 +31,7 @@ func testRequest(t *testing.T, ts *httptest.Server, method,
 	return resp, string(respBody)
 }
 
-func TestHandleUpdate(t *testing.T) {
-	type request struct {
-		method string
-		url    string
-	}
+func TestRouter(t *testing.T) {
 
 	type want struct {
 		code int
@@ -114,4 +115,64 @@ func TestHandleUpdate(t *testing.T) {
 			assert.Equal(t, test.want.code, resp.StatusCode)
 		})
 	}
+}
+
+func TestSequense(t *testing.T) {
+	type response struct {
+		statusCode int
+		response   string
+	}
+	type testCase struct {
+		name     string
+		requests []request
+		want     response
+	}
+	testTable := []testCase{
+		{
+			"Empty gauge",
+			[]request{{http.MethodGet, "/value/gauge/lol"}},
+			response{http.StatusNotFound, ""},
+		},
+		{
+			"Set gauge",
+			[]request{
+				{http.MethodPost, "/update/gauge/lol/4.5"},
+				{http.MethodGet, "/value/gauge/lol"},
+			},
+			response{http.StatusOK, "4.5"},
+		},
+		{
+			"Empty counter",
+			[]request{{http.MethodGet, "/value/counter/lol"}},
+			response{http.StatusNotFound, ""},
+		},
+		{
+			"Set counter counter",
+			[]request{
+				{http.MethodPost, "/update/counter/lol/4"},
+				{http.MethodGet, "/value/counter/lol"},
+			},
+			response{http.StatusOK, "4"},
+		},
+	}
+
+	storage := repository.NewMemStorage()
+	router := GetRouter(storage)
+	ts := httptest.NewServer(router)
+	defer ts.Close()
+
+	for _, testCase := range testTable {
+		t.Run(testCase.name, func(t *testing.T) {
+			var response *http.Response
+			var content string
+			for _, requst := range testCase.requests {
+				response, content = testRequest(t, ts, requst.method, requst.url)
+			}
+			assert.Equal(t, response.StatusCode, testCase.want.statusCode)
+			if testCase.want.response != "" {
+				assert.Equal(t, testCase.want.response, content)
+			}
+		})
+	}
+
 }

@@ -1,13 +1,30 @@
 package handler
 
 import (
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/f044fs3t5w3f/metrics/internal/repository"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
+
+func testRequest(t *testing.T, ts *httptest.Server, method,
+	path string) (*http.Response, string) {
+	req, err := http.NewRequest(method, ts.URL+path, nil)
+	require.NoError(t, err)
+
+	resp, err := ts.Client().Do(req)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	require.NoError(t, err)
+
+	return resp, string(respBody)
+}
 
 func TestHandleUpdate(t *testing.T) {
 	type request struct {
@@ -57,46 +74,44 @@ func TestHandleUpdate(t *testing.T) {
 		},
 		{
 			name:    "without value",
-			request: request{method: http.MethodPost, url: "/update/counter/lol/"},
-			want:    want{code: http.StatusBadRequest},
+			request: request{method: http.MethodPost, url: "/update/counter/lol"},
+			want:    want{code: http.StatusNotFound},
 		},
 		{
 			name:    "bad value",
-			request: request{method: http.MethodPost, url: "/update/counter/lol/100f/"},
+			request: request{method: http.MethodPost, url: "/update/counter/lol/100f"},
 			want:    want{code: http.StatusBadRequest},
 		},
 		{
 			name:    "Correct counter",
-			request: request{method: http.MethodPost, url: "/update/counter/lol/100/"},
+			request: request{method: http.MethodPost, url: "/update/counter/lol/100"},
 			want:    want{code: http.StatusOK},
 		},
 		{
 			name:    "Float counter",
-			request: request{method: http.MethodPost, url: "/update/counter/lol/100.1/"},
+			request: request{method: http.MethodPost, url: "/update/counter/lol/100.1"},
 			want:    want{code: http.StatusBadRequest},
 		},
 		{
 			name:    "Correct gauge",
-			request: request{method: http.MethodPost, url: "/update/gauge/lol/100/"},
+			request: request{method: http.MethodPost, url: "/update/gauge/lol/100"},
 			want:    want{code: http.StatusOK},
 		},
 		{
 			name:    "Float gauge",
-			request: request{method: http.MethodPost, url: "/update/gauge/lol/100.2/"},
+			request: request{method: http.MethodPost, url: "/update/gauge/lol/100.2"},
 			want:    want{code: http.StatusOK},
 		},
 	}
 
 	storage := repository.NewMemStorage()
-
+	router := GetRouter(storage)
+	ts := httptest.NewServer(router)
+	defer ts.Close()
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			request := httptest.NewRequest(test.request.method, test.request.url, nil)
-			w := httptest.NewRecorder()
-			Update(storage)(w, request)
-			res := w.Result()
-			res.Body.Close()
-			assert.Equal(t, test.want.code, res.StatusCode)
+			resp, _ := testRequest(t, ts, test.request.method, test.request.url)
+			assert.Equal(t, test.want.code, resp.StatusCode)
 		})
 	}
 }

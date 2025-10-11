@@ -10,6 +10,6 @@ func GetRouter(storage repository.Storage) *chi.Mux {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Post("/update/{metricType}/{mericName}/{metricValue}", Update(storage))
-	r.Get("/value/{metricType}/{mericName}/", Get(storage))
+	r.Get("/value/{metricType}/{mericName}", Get(storage))
 	return r
 }

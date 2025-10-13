@@ -21,8 +21,8 @@ func main() {
 				lock.Unlock()
 				continue
 			}
-			lock.Unlock()
 			lastBatch := store[len(store)-1]
+			lock.Unlock()
 			agent.ReportBatch(flagEndpointAddr, lastBatch)
 			time.Sleep(reportInterval)
 		}

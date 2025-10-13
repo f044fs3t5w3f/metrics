@@ -37,7 +37,7 @@ func GetMetricsBatch(counter int64) MetricsBatch {
 	})
 	ramdomValue := rand.Float64()
 	batch = append(batch, &models.Metrics{
-		ID:    "PollCount",
+		ID:    "RandomValue",
 		MType: models.Gauge,
 		Value: &ramdomValue,
 	})

@@ -7,12 +7,10 @@ import (
 	"github.com/f044fs3t5w3f/metrics/internal/agent"
 )
 
-const pollInterval = 2 * time.Second
-const reportInterval = 10 * time.Second
-
-const host = "localhost:8080"
-
 func main() {
+	parseFlags()
+	pollInterval := time.Duration(flagPollInterval) * time.Second
+	reportInterval := time.Duration(flagReportInterval) * time.Second
 	lock := sync.Mutex{}
 	var counter int64 = 0
 	store := make([]agent.MetricsBatch, 0)
@@ -25,7 +23,7 @@ func main() {
 			}
 			lock.Unlock()
 			lastBatch := store[len(store)-1]
-			agent.ReportBatch(host, lastBatch)
+			agent.ReportBatch(flagEndpointAddr, lastBatch)
 			time.Sleep(reportInterval)
 		}
 	}()

@@ -18,7 +18,7 @@ func main() {
 
 	reportInterval := envReportInterval
 	if reportInterval == 0 {
-		pollInterval = flagReportInterval
+		reportInterval = flagReportInterval
 	}
 
 	addr := envRunAddr

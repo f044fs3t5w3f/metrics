@@ -2,9 +2,11 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/f044fs3t5w3f/metrics/internal/handler"
+	"github.com/f044fs3t5w3f/metrics/internal/logger"
 	"github.com/f044fs3t5w3f/metrics/internal/repository"
 )
 
@@ -17,9 +19,13 @@ func main() {
 		addr = flagRunAddr
 	}
 	r := handler.GetRouter(storage)
-	fmt.Println(addr)
-	err := http.ListenAndServe(addr, r)
+	err := logger.Initialize("INFO")
 	if err != nil {
-		panic(err.Error())
+		log.Fatalf("couldn't initialize logger: %s", err.Error())
+	}
+	fmt.Println(addr)
+	err = http.ListenAndServe(addr, r)
+	if err != nil {
+		log.Fatalf("couldn't start server: %s", err)
 	}
 }

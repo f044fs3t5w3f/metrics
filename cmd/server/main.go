@@ -3,19 +3,22 @@ package main
 import (
 	"fmt"
 	"net/http"
-	"os"
 
 	"github.com/f044fs3t5w3f/metrics/internal/handler"
 	"github.com/f044fs3t5w3f/metrics/internal/repository"
 )
 
 func main() {
-	fmt.Println(os.Args)
 	parseFlags()
+	parseEnv()
 	storage := repository.NewMemStorage()
+	addr := envRunAddr
+	if addr == "" {
+		addr = flagRunAddr
+	}
 	r := handler.GetRouter(storage)
-	fmt.Println(flagRunAddr)
-	err := http.ListenAndServe(flagRunAddr, r)
+	fmt.Println(addr)
+	err := http.ListenAndServe(addr, r)
 	if err != nil {
 		panic(err.Error())
 	}

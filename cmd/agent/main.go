@@ -9,8 +9,23 @@ import (
 
 func main() {
 	parseFlags()
-	pollInterval := time.Duration(flagPollInterval) * time.Second
-	reportInterval := time.Duration(flagReportInterval) * time.Second
+	parseEnv()
+
+	pollInterval := envPollInterval
+	if pollInterval == 0 {
+		pollInterval = flagPollInterval
+	}
+
+	reportInterval := envReportInterval
+	if reportInterval == 0 {
+		pollInterval = flagReportInterval
+	}
+
+	addr := envRunAddr
+	if addr == "" {
+		addr = flagEndpointAddr
+	}
+
 	lock := sync.Mutex{}
 	var counter int64 = 0
 	store := make([]agent.MetricsBatch, 0)
@@ -23,8 +38,8 @@ func main() {
 			}
 			lastBatch := store[len(store)-1]
 			lock.Unlock()
-			agent.ReportBatch(flagEndpointAddr, lastBatch)
-			time.Sleep(reportInterval)
+			agent.ReportBatch(addr, lastBatch)
+			time.Sleep(time.Duration(reportInterval) * time.Second)
 		}
 	}()
 	for {
@@ -33,6 +48,6 @@ func main() {
 		lock.Lock()
 		store = append(store, batch)
 		lock.Unlock()
-		time.Sleep(pollInterval)
+		time.Sleep(time.Duration(pollInterval) * time.Second)
 	}
 }

@@ -59,11 +59,6 @@ func TestRouter(t *testing.T) {
 			want:    want{code: http.StatusNotFound},
 		},
 		{
-			name:    "Empty counter",
-			request: request{method: http.MethodPost, url: "/update/"},
-			want:    want{code: http.StatusNotFound},
-		},
-		{
 			name:    "Bad type",
 			request: request{method: http.MethodPost, url: "/update/haha/"},
 			want:    want{code: http.StatusNotFound},

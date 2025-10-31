@@ -34,8 +34,6 @@ func (m *MockStorage) SetGauge(metricName string, value float64) {
 }
 
 func TestUpdateJson(t *testing.T) {
-	storage := repository.NewMemStorage()
-	handler := UpdateJson(storage)
 	type testCase struct {
 		name   string
 		body   string
@@ -44,7 +42,7 @@ func TestUpdateJson(t *testing.T) {
 	}
 	testCases := []testCase{
 		{"Good counter", `{"id": "n","type": "counter","delta": 10}`, http.StatusOK, []string{"counter;n;10"}},
-		{"Good gauge", `{"id": "n","type": "gauge","value": 10}`, http.StatusOK, []string{"gauge;n;10"}},
+		{"Good gauge", `{"id": "n","type": "gauge","value": 10}`, http.StatusOK, []string{"gauge;n;10.000000"}},
 		{"Nil counter", `{"id": "n","type": "counter"}`, http.StatusBadRequest, []string{}},
 		{"Nil gauge", `{"id": "n","type": "gauge"}`, http.StatusBadRequest, []string{}},
 		{"Bad type", `{"id": "n","type": "lol"}`, http.StatusBadRequest, []string{}},
@@ -52,6 +50,8 @@ func TestUpdateJson(t *testing.T) {
 	}
 
 	for _, tCase := range testCases {
+		storage := &MockStorage{calls: []string{}}
+		handler := UpdateJson(storage)
 		t.Run(tCase.name, func(t *testing.T) {
 			body := strings.NewReader(tCase.body)
 			req := httptest.NewRequest(http.MethodPost, "/", body)
@@ -61,6 +61,7 @@ func TestUpdateJson(t *testing.T) {
 			defer res.Body.Close()
 
 			assert.Equal(t, tCase.status, res.StatusCode)
+			assert.Equal(t, tCase.calls, storage.calls)
 		})
 	}
 

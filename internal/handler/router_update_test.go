@@ -59,9 +59,14 @@ func TestRouter(t *testing.T) {
 			want:    want{code: http.StatusNotFound},
 		},
 		{
-			name:    "Bad type",
+			name:    "Empty type",
 			request: request{method: http.MethodPost, url: "/update/haha/"},
 			want:    want{code: http.StatusNotFound},
+		},
+		{
+			name:    "bad type",
+			request: request{method: http.MethodPost, url: "/update/cntr/lol/100"},
+			want:    want{code: http.StatusBadRequest},
 		},
 		{
 			name:    "without metric",
@@ -92,6 +97,11 @@ func TestRouter(t *testing.T) {
 			name:    "Correct gauge",
 			request: request{method: http.MethodPost, url: "/update/gauge/lol/100"},
 			want:    want{code: http.StatusOK},
+		},
+		{
+			name:    "Bad gauge",
+			request: request{method: http.MethodPost, url: "/update/gauge/lol/100j"},
+			want:    want{code: http.StatusBadRequest},
 		},
 		{
 			name:    "Float gauge",

@@ -11,25 +11,25 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type MockStorage struct {
+type updateTestMockStorage struct {
 	calls []string
 }
 
-var _ repository.Storage = &MockStorage{}
+var _ repository.Storage = &updateTestMockStorage{}
 
-func (m *MockStorage) AddCounter(metricName string, value int64) {
+func (m *updateTestMockStorage) AddCounter(metricName string, value int64) {
 	m.calls = append(m.calls, fmt.Sprintf("counter;%s;%d", metricName, value))
 }
 
-func (m *MockStorage) GetCounter(metricName string) (int64, error) {
+func (m *updateTestMockStorage) GetCounter(metricName string) (int64, error) {
 	panic("unimplemented")
 }
 
-func (m *MockStorage) GetGauge(metricName string) (float64, error) {
+func (m *updateTestMockStorage) GetGauge(metricName string) (float64, error) {
 	panic("unimplemented")
 }
 
-func (m *MockStorage) SetGauge(metricName string, value float64) {
+func (m *updateTestMockStorage) SetGauge(metricName string, value float64) {
 	m.calls = append(m.calls, fmt.Sprintf("gauge;%s;%f", metricName, value))
 }
 
@@ -45,12 +45,12 @@ func TestUpdateJson(t *testing.T) {
 		{"Good gauge", `{"id": "n","type": "gauge","value": 10}`, http.StatusOK, []string{"gauge;n;10.000000"}},
 		{"Nil counter", `{"id": "n","type": "counter"}`, http.StatusBadRequest, []string{}},
 		{"Nil gauge", `{"id": "n","type": "gauge"}`, http.StatusBadRequest, []string{}},
-		{"Bad type", `{"id": "n","type": "lol"}`, http.StatusBadRequest, []string{}},
-		{"Bad json", `:(`, http.StatusBadRequest, []string{}},
+		{"Incorrect type", `{"id": "n","type": "lol"}`, http.StatusBadRequest, []string{}},
+		{"Malformed json", `:(`, http.StatusBadRequest, []string{}},
 	}
 
 	for _, tCase := range testCases {
-		storage := &MockStorage{calls: []string{}}
+		storage := &updateTestMockStorage{calls: []string{}}
 		handler := UpdateJson(storage)
 		t.Run(tCase.name, func(t *testing.T) {
 			body := strings.NewReader(tCase.body)

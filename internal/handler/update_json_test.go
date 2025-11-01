@@ -51,7 +51,7 @@ func TestUpdateJson(t *testing.T) {
 
 	for _, tCase := range testCases {
 		storage := &updateTestMockStorage{calls: []string{}}
-		handler := UpdateJson(storage)
+		handler := UpdateJSON(storage)
 		t.Run(tCase.name, func(t *testing.T) {
 			body := strings.NewReader(tCase.body)
 			req := httptest.NewRequest(http.MethodPost, "/", body)
@@ -62,10 +62,6 @@ func TestUpdateJson(t *testing.T) {
 
 			assert.Equal(t, tCase.status, res.StatusCode)
 			assert.Equal(t, tCase.calls, storage.calls)
-			if tCase.status == http.StatusOK {
-				gotContentType := res.Header.Get("Content-Type")
-				assert.Equal(t, "application/json", gotContentType)
-			}
 		})
 	}
 

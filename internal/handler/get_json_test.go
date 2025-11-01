@@ -41,7 +41,7 @@ func (g *getTestMockStorage) SetGauge(metricName string, value float64) {
 
 var _ repository.Storage = &getTestMockStorage{}
 
-func TestGetJson(t *testing.T) {
+func TestGetJSON(t *testing.T) {
 	type testCase struct {
 		name      string
 		request   string
@@ -87,7 +87,7 @@ func TestGetJson(t *testing.T) {
 		},
 	}
 	storage := &getTestMockStorage{}
-	handler := GetJson(storage)
+	handler := GetJSON(storage)
 	for _, tCase := range testCases {
 		t.Run(tCase.name, func(t *testing.T) {
 			body := strings.NewReader(tCase.request)

@@ -8,7 +8,7 @@ import (
 	"github.com/f044fs3t5w3f/metrics/internal/repository"
 )
 
-func GetJson(storage repository.Storage) http.HandlerFunc {
+func GetJSON(storage repository.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var metric *models.Metrics
 		defer r.Body.Close()

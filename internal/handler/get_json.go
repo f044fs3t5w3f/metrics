@@ -45,6 +45,5 @@ func GetJSON(storage repository.Storage) http.HandlerFunc {
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
-		w.Header().Set("Content-Type", "application/json")
 	}
 }

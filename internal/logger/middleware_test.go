@@ -31,8 +31,8 @@ func TestRequestLogger(t *testing.T) {
 	)
 	observed, logs := observer.New(zapcore.InfoLevel)
 	Log = zap.New(zapcore.NewTee(mycore, observed))
-
-	RequestLogger(helloWorldHandler)(recorder, request)
+	var h http.HandlerFunc = helloWorldHandler
+	RequestLogger(h).ServeHTTP(recorder, request)
 	entries := logs.All()
 	if len(entries) != 1 {
 		t.Error("Incorrect number of logs")

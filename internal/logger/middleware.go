@@ -31,7 +31,7 @@ func (r *loggingResponseWriter) WriteHeader(statusCode int) {
 	r.responseData.status = statusCode
 }
 
-func RequestLogger(h http.HandlerFunc) http.HandlerFunc {
+func RequestLogger(h http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		responseData := &responseData{
@@ -42,7 +42,7 @@ func RequestLogger(h http.HandlerFunc) http.HandlerFunc {
 			ResponseWriter: w,
 			responseData:   responseData,
 		}
-		h(&lw, r)
+		h.ServeHTTP(&lw, r)
 		duration := time.Since(start).Seconds()
 		Log.Info("got incoming HTTP request",
 			zap.String("method", r.Method),

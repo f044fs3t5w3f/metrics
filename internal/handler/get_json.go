@@ -38,6 +38,7 @@ func GetJson(storage repository.Storage) http.HandlerFunc {
 			http.Error(w, "Bad request", http.StatusBadRequest)
 			return
 		}
+		w.Header().Set("Content-Type", "application/json")
 		encoder := json.NewEncoder(w)
 		err = encoder.Encode(metric)
 		if err != nil {

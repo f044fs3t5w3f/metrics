@@ -26,12 +26,14 @@ func UpdateJson(storage repository.Storage) http.HandlerFunc {
 				return
 			}
 			storage.SetGauge(metric.ID, *metric.Value)
+			return
 		case models.Counter:
 			if metric.Delta == nil {
 				http.Error(w, "Bad request", http.StatusBadRequest)
 				return
 			}
 			storage.AddCounter(metric.ID, *metric.Delta)
+			return
 		default:
 			http.Error(w, "Bad request", http.StatusBadRequest)
 			return

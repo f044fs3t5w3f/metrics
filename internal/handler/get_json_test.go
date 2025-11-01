@@ -104,6 +104,8 @@ func TestGetJson(t *testing.T) {
 			responseBytes, _ := io.ReadAll(res.Body)
 			got := strings.TrimSuffix(string(responseBytes), "\n")
 			assert.Equal(t, tCase.response, got)
+			gotContentType := res.Header.Get("Content-Type")
+			assert.Equal(t, "application/json", gotContentType)
 		})
 	}
 }

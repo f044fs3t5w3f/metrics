@@ -25,7 +25,7 @@ func reportMetric(host string, metric *models.Metrics) error {
 	logger.Log.Info("to send metric", zap.String("type", metric.MType), zap.String("name", metric.ID))
 	jsonData, _ := json.Marshal(metric)
 	body := bytes.NewBuffer(jsonData)
-	response, err := http.Post(url, "", body)
+	response, err := http.Post(url, "application/json", body)
 	if err != nil {
 		return fmt.Errorf("POST: %s", err)
 	}

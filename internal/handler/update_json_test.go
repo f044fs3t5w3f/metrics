@@ -62,6 +62,10 @@ func TestUpdateJson(t *testing.T) {
 
 			assert.Equal(t, tCase.status, res.StatusCode)
 			assert.Equal(t, tCase.calls, storage.calls)
+			if tCase.status == http.StatusOK {
+				gotContentType := res.Header.Get("Content-Type")
+				assert.Equal(t, "application/json", gotContentType)
+			}
 		})
 	}
 

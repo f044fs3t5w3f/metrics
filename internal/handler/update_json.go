@@ -10,7 +10,7 @@ import (
 
 func UpdateJson(storage repository.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var metric *models.Metrics
+		var metric models.Metrics
 		defer r.Body.Close()
 		decoder := json.NewDecoder(r.Body)
 		err := decoder.Decode(&metric)

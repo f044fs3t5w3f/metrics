@@ -1,6 +1,8 @@
 package agent
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -19,12 +21,11 @@ func ReportBatch(host string, batch MetricsBatch) {
 }
 
 func reportMetric(host string, metric *models.Metrics) error {
-	url, err := getURL(host, metric)
-	if err != nil {
-		return fmt.Errorf("getURL: %s", err)
-	}
-	logger.Log.Info("to send metric", zap.String("url", url))
-	response, err := http.Post(url, "", nil)
+	url := fmt.Sprintf("http://%s/update/", host)
+	logger.Log.Info("to send metric", zap.String("type", metric.MType), zap.String("name", metric.ID))
+	jsonData, _ := json.Marshal(metric)
+	body := bytes.NewBuffer(jsonData)
+	response, err := http.Post(url, "", body)
 	if err != nil {
 		return fmt.Errorf("POST: %s", err)
 	}

@@ -35,7 +35,7 @@ func RequestLogger(h http.HandlerFunc) http.HandlerFunc {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		responseData := &responseData{
-			status: 0,
+			status: http.StatusOK,
 			size:   0,
 		}
 		lw := loggingResponseWriter{

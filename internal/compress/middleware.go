@@ -14,6 +14,18 @@ func Middleware(next http.Handler) http.Handler {
 			defer cw.Close()
 			w = cw
 		}
+		contentEncoding := r.Header.Get("Content-Encoding")
+		sendsGzip := strings.Contains(contentEncoding, "gzip")
+		if sendsGzip {
+			cr, err := newCompressReader(r.Body)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			r.Body = cr
+			defer cr.Close()
+		}
+
 		next.ServeHTTP(w, r)
 	}
 	return http.HandlerFunc(fn)

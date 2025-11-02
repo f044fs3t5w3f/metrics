@@ -2,6 +2,7 @@ package agent
 
 import (
 	"bytes"
+	"compress/gzip"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -24,8 +25,12 @@ func reportMetric(host string, metric *models.Metrics) error {
 	url := fmt.Sprintf("http://%s/update/", host)
 	logger.Log.Info("to send metric", zap.String("type", metric.MType), zap.String("name", metric.ID))
 	jsonData, _ := json.Marshal(metric)
-	body := bytes.NewBuffer(jsonData)
-	response, err := http.Post(url, "application/json", body)
+
+	var buf bytes.Buffer
+	gz := gzip.NewWriter(&buf)
+	gz.Write(jsonData)
+	gz.Close()
+	response, err := http.Post(url, "application/json", &buf)
 	if err != nil {
 		return fmt.Errorf("POST: %s", err)
 	}

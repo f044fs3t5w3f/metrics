@@ -7,12 +7,18 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/f044fs3t5w3f/metrics/internal/models"
 	"github.com/f044fs3t5w3f/metrics/internal/repository"
 	"github.com/stretchr/testify/assert"
 )
 
 type updateTestMockStorage struct {
 	calls []string
+}
+
+// GetValuesList implements repository.Storage.
+func (m *updateTestMockStorage) GetValuesList() []models.Metrics {
+	panic("unimplemented")
 }
 
 var _ repository.Storage = &updateTestMockStorage{}

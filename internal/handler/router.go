@@ -15,5 +15,6 @@ func GetRouter(storage repository.Storage) *chi.Mux {
 	r.Post("/update/{metricType}/{mericName}/{metricValue}", Update(storage))
 	r.Get("/value/{metricType}/{mericName}", Get(storage))
 	r.Post("/value/", GetJSON(storage))
+	r.Get("/", Index(storage))
 	return r
 }

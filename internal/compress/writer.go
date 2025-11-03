@@ -39,7 +39,7 @@ func (c *compressWriter) Write(p []byte) (int, error) {
 
 func (c *compressWriter) isJSONContentType() bool {
 	contentType := c.Header().Get("Content-Type")
-	return strings.Contains(contentType, "application/json")
+	return strings.Contains(contentType, "application/json") || strings.Contains(contentType, "text/html")
 
 }
 

@@ -8,11 +8,17 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/f044fs3t5w3f/metrics/internal/models"
 	"github.com/f044fs3t5w3f/metrics/internal/repository"
 	"github.com/stretchr/testify/assert"
 )
 
 type getTestMockStorage struct {
+}
+
+// GetValuesList implements repository.Storage.
+func (g *getTestMockStorage) GetValuesList() []models.Metrics {
+	panic("unimplemented")
 }
 
 func (g *getTestMockStorage) AddCounter(metricName string, value int64) {

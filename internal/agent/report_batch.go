@@ -24,13 +24,18 @@ func ReportBatch(host string, batch MetricsBatch) {
 func reportMetric(host string, metric *models.Metrics) error {
 	url := fmt.Sprintf("http://%s/update/", host)
 	logger.Log.Info("to send metric", zap.String("type", metric.MType), zap.String("name", metric.ID))
-	jsonData, _ := json.Marshal(metric)
-
+	jsonData, err := json.Marshal(metric)
+	if err != nil {
+		return fmt.Errorf("marshalling metric error: %s", err)
+	}
 	var buf bytes.Buffer
 	gz := gzip.NewWriter(&buf)
 	gz.Write(jsonData)
 	gz.Close()
-	req, _ := http.NewRequest(http.MethodPost, url, &buf)
+	req, err := http.NewRequest(http.MethodPost, url, &buf)
+	if err != nil {
+		return fmt.Errorf("creating request error: %s", err)
+	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Content-Encoding", "gzip")
 	req.Header.Set("Accept-Encoding", "gzip")

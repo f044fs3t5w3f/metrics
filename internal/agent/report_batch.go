@@ -33,6 +33,7 @@ func reportMetric(host string, metric *models.Metrics) error {
 	req, _ := http.NewRequest(http.MethodPost, url, &buf)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Content-Encoding", "gzip")
+	req.Header.Set("Accept-Encoding", "gzip")
 	response, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("POST: %s", err)

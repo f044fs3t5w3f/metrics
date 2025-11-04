@@ -27,7 +27,7 @@ func (c *compressWriter) Header() http.Header {
 
 func (c *compressWriter) Write(p []byte) (int, error) {
 	if c.w == nil {
-		if c.isJSONContentType() {
+		if c.isCompressingAvaliable() {
 			c.ow.Header().Set("Content-Encoding", "gzip")
 			c.w = c.zw
 		} else {
@@ -37,14 +37,14 @@ func (c *compressWriter) Write(p []byte) (int, error) {
 	return c.w.Write(p)
 }
 
-func (c *compressWriter) isJSONContentType() bool {
+func (c *compressWriter) isCompressingAvaliable() bool {
 	contentType := c.Header().Get("Content-Type")
 	return strings.Contains(contentType, "application/json") || strings.Contains(contentType, "text/html")
 
 }
 
 func (c *compressWriter) WriteHeader(statusCode int) {
-	if statusCode >= 300 || !c.isJSONContentType() {
+	if statusCode >= 300 || !c.isCompressingAvaliable() {
 		c.w = c.ow
 	} else {
 		c.ow.Header().Set("Content-Encoding", "gzip")

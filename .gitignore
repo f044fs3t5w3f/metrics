@@ -33,3 +33,5 @@ vendor/
 run_tests.sh
 
 env.list
+
+store.json

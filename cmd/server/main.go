@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -10,11 +9,16 @@ import (
 	"github.com/f044fs3t5w3f/metrics/internal/handler"
 	"github.com/f044fs3t5w3f/metrics/internal/logger"
 	"github.com/f044fs3t5w3f/metrics/internal/repository"
+	"go.uber.org/zap"
 )
 
 func main() {
 	parseFlags()
 	parseEnv()
+	err := logger.Initialize("INFO")
+	if err != nil {
+		log.Fatalf("couldn't initialize logger: %s", err.Error())
+	}
 
 	fileStoragePath := envFileStoragePath
 	if fileStoragePath == "" {
@@ -26,7 +30,7 @@ func main() {
 		var err error
 		storeInterval, err = strconv.ParseInt(envStoreInterval, 10, 64)
 		if err != nil {
-			log.Fatalf("couldn't parse store interval env: %s", err.Error())
+			logger.Log.Fatal("couldn't parse store interval env", zap.Error(err))
 		}
 	} else {
 		storeInterval = flagStoreInterval
@@ -40,7 +44,7 @@ func main() {
 		case "false":
 			restore = false
 		default:
-			log.Fatalf("Incorrect value of environment variable RESTORE: %s. Only true/false are avaliable", envRestore)
+			logger.Log.Fatal("Incorrect value of environment variable RESTORE. Only true/false are avaliable", zap.String("value", envRestore))
 		}
 	} else {
 		restore = flagRestore
@@ -53,13 +57,9 @@ func main() {
 	}
 
 	r := handler.GetRouter(storage)
-	err := logger.Initialize("INFO")
-	if err != nil {
-		log.Fatalf("couldn't initialize logger: %s", err.Error())
-	}
-	fmt.Println(addr)
+	logger.Log.Info("Server has been started", zap.String("addr", addr))
 	err = http.ListenAndServe(addr, r)
 	if err != nil {
-		log.Fatalf("couldn't start server: %s", err)
+		logger.Log.Fatal("couldn't start server", zap.Error(err))
 	}
 }

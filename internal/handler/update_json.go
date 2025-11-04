@@ -13,9 +13,7 @@ func UpdateJSON(storage repository.Storage) http.HandlerFunc {
 		var metric models.Metrics
 		defer r.Body.Close()
 		decoder := json.NewDecoder(r.Body)
-		// data, _ := io.ReadAll(r.Body)
-		// dataS := string(data)
-		// fmt.Println(dataS)
+
 		err := decoder.Decode(&metric)
 		if err != nil {
 			http.Error(w, "Bad request", http.StatusBadRequest)

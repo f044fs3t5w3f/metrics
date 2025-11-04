@@ -1,7 +1,6 @@
 package agent
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/f044fs3t5w3f/metrics/internal/models"
@@ -63,9 +62,8 @@ func TestGetURLError(t *testing.T) {
 		},
 	}
 	for _, metric := range cases {
-		url, err := getURL(hostName, metric)
+		_, err := getURL(hostName, metric)
 		if err == nil {
-			fmt.Println(url)
 			t.Error("Expected an error, but got nil")
 		}
 	}

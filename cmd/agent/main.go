@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"sync"
 	"time"
@@ -45,7 +44,6 @@ func main() {
 			}
 			lastBatch := store[len(store)-1]
 			lock.Unlock()
-			fmt.Println("send")
 			agent.ReportBatch(addr, lastBatch)
 			time.Sleep(time.Duration(reportInterval) * time.Second)
 		}

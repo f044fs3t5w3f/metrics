@@ -4,7 +4,6 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/f044fs3t5w3f/metrics/internal/handler"
 	"github.com/f044fs3t5w3f/metrics/internal/logger"
@@ -38,13 +37,9 @@ func main() {
 
 	var restore bool
 	if envRestore != "" {
-		switch strings.ToLower(envRestore) {
-		case "true":
-			restore = true
-		case "false":
-			restore = false
-		default:
-			logger.Log.Fatal("Incorrect value of environment variable RESTORE. Only true/false are avaliable", zap.String("value", envRestore))
+		restore, err = strconv.ParseBool(envRestore)
+		if err != nil {
+			logger.Log.Fatal("Incorrect value of environment variable RESTORE", zap.String("value", envRestore))
 		}
 	} else {
 		restore = flagRestore

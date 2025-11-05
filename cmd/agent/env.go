@@ -17,7 +17,7 @@ func parseEnv() {
 	var err error
 	envReportIntervalStr := os.Getenv("REPORT_INTERVAL")
 	if envReportIntervalStr != "" {
-		flagReportInterval, err = strconv.ParseInt(envReportIntervalStr, 10, 64)
+		envReportInterval, err = strconv.ParseInt(envReportIntervalStr, 10, 64)
 		if err != nil {
 			panic("REPORT_INTERVAL parse error")
 		}

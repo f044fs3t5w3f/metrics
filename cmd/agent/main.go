@@ -1,19 +1,40 @@
 package main
 
 import (
+	"log"
 	"sync"
 	"time"
 
 	"github.com/f044fs3t5w3f/metrics/internal/agent"
+	"github.com/f044fs3t5w3f/metrics/internal/logger"
 )
 
 func main() {
 	parseFlags()
-	pollInterval := time.Duration(flagPollInterval) * time.Second
-	reportInterval := time.Duration(flagReportInterval) * time.Second
+	parseEnv()
+
+	pollInterval := envPollInterval
+	if pollInterval == 0 {
+		pollInterval = flagPollInterval
+	}
+
+	reportInterval := envReportInterval
+	if reportInterval == 0 {
+		reportInterval = flagReportInterval
+	}
+
+	addr := envRunAddr
+	if addr == "" {
+		addr = flagEndpointAddr
+	}
+
 	lock := sync.Mutex{}
 	var counter int64 = 0
 	store := make([]agent.MetricsBatch, 0)
+	err := logger.Initialize("INFO")
+	if err != nil {
+		log.Fatalf("couldn't initialize logger: %s", err.Error())
+	}
 	go func() {
 		for {
 			lock.Lock()
@@ -23,8 +44,8 @@ func main() {
 			}
 			lastBatch := store[len(store)-1]
 			lock.Unlock()
-			agent.ReportBatch(flagEndpointAddr, lastBatch)
-			time.Sleep(reportInterval)
+			agent.ReportBatch(addr, lastBatch)
+			time.Sleep(time.Duration(reportInterval) * time.Second)
 		}
 	}()
 	for {
@@ -33,6 +54,6 @@ func main() {
 		lock.Lock()
 		store = append(store, batch)
 		lock.Unlock()
-		time.Sleep(pollInterval)
+		time.Sleep(time.Duration(pollInterval) * time.Second)
 	}
 }

@@ -10,6 +10,7 @@ import (
 var ErrEmptyValue = errors.New("EMPTY VALUE")
 var ErrEmptyDelta = errors.New("EMPTY DELTA")
 
+// Deprecated
 func getURL(host string, metric *models.Metrics) (string, error) {
 	baseURL := fmt.Sprintf("http://%s/update/", host)
 	switch metric.MType {

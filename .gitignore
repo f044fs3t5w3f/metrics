@@ -11,6 +11,8 @@
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 
+coverage.html
+
 # Binaries
 cmd/agent/main
 cmd/agent/agent
@@ -29,3 +31,7 @@ vendor/
 .DS_Store
 
 run_tests.sh
+
+env.list
+
+store.json

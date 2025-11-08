@@ -56,17 +56,22 @@ func TestRouter(t *testing.T) {
 		{
 			name:    "Empty url",
 			request: request{method: http.MethodPost, url: "/"},
-			want:    want{code: http.StatusNotFound},
+			want:    want{code: http.StatusMethodNotAllowed},
 		},
 		{
-			name:    "Empty counter",
-			request: request{method: http.MethodPost, url: "/update/"},
-			want:    want{code: http.StatusNotFound},
+			name:    "Empty url",
+			request: request{method: http.MethodGet, url: "/"},
+			want:    want{code: http.StatusOK},
 		},
 		{
-			name:    "Bad type",
+			name:    "Empty type",
 			request: request{method: http.MethodPost, url: "/update/haha/"},
 			want:    want{code: http.StatusNotFound},
+		},
+		{
+			name:    "bad type",
+			request: request{method: http.MethodPost, url: "/update/cntr/lol/100"},
+			want:    want{code: http.StatusBadRequest},
 		},
 		{
 			name:    "without metric",
@@ -99,13 +104,18 @@ func TestRouter(t *testing.T) {
 			want:    want{code: http.StatusOK},
 		},
 		{
+			name:    "Bad gauge",
+			request: request{method: http.MethodPost, url: "/update/gauge/lol/100j"},
+			want:    want{code: http.StatusBadRequest},
+		},
+		{
 			name:    "Float gauge",
 			request: request{method: http.MethodPost, url: "/update/gauge/lol/100.2"},
 			want:    want{code: http.StatusOK},
 		},
 	}
 
-	storage := repository.NewMemStorage()
+	storage := repository.NewMemStorageWithoutFile()
 	router := GetRouter(storage)
 	ts := httptest.NewServer(router)
 	defer ts.Close()
@@ -157,7 +167,7 @@ func TestSequense(t *testing.T) {
 		},
 	}
 
-	storage := repository.NewMemStorage()
+	storage := repository.NewMemStorageWithoutFile()
 	router := GetRouter(storage)
 	ts := httptest.NewServer(router)
 	defer ts.Close()

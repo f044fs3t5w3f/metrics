@@ -81,7 +81,7 @@ func (m *memStorage) saveToFile() {
 
 	m.lock.RLock()
 	defer m.lock.RUnlock()
-	file, err := os.OpenFile(m.fileStoragePath, os.O_WRONLY|os.O_CREATE, 0600)
+	file, err := os.OpenFile(m.fileStoragePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
 		logger.Log.Warn("error while opening file", zap.String("file", m.fileStoragePath), zap.Error(err))
 	}

@@ -5,6 +5,7 @@ import (
 	"compress/gzip"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 
 	"github.com/f044fs3t5w3f/metrics/internal/logger"
@@ -21,18 +22,26 @@ func ReportBatch(host string, batch MetricsBatch) {
 	}
 }
 
-func reportMetric(host string, metric *models.Metrics) error {
-	url := fmt.Sprintf("http://%s/update/", host)
-	logger.Log.Info("to send metric", zap.String("type", metric.MType), zap.String("name", metric.ID))
+func getRequestBody(metric *models.Metrics) (io.Reader, error) {
 	jsonData, err := json.Marshal(metric)
 	if err != nil {
-		return fmt.Errorf("marshalling metric error: %s", err)
+		return nil, fmt.Errorf("marshalling metric error: %s", err)
 	}
 	var buf bytes.Buffer
 	gz := gzip.NewWriter(&buf)
 	gz.Write(jsonData)
 	gz.Close()
-	req, err := http.NewRequest(http.MethodPost, url, &buf)
+	return &buf, nil
+}
+
+func reportMetric(host string, metric *models.Metrics) error {
+	url := fmt.Sprintf("http://%s/update/", host)
+	logger.Log.Info("to send metric", zap.String("type", metric.MType), zap.String("name", metric.ID))
+	body, err := getRequestBody(metric)
+	if err != nil {
+		return fmt.Errorf("getRequestBody: %s", err)
+	}
+	req, err := http.NewRequest(http.MethodPost, url, body)
 	if err != nil {
 		return fmt.Errorf("creating request error: %s", err)
 	}

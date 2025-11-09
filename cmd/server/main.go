@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 	"net/http"
 	"strconv"
@@ -8,6 +9,7 @@ import (
 	"github.com/f044fs3t5w3f/metrics/internal/handler"
 	"github.com/f044fs3t5w3f/metrics/internal/logger"
 	"github.com/f044fs3t5w3f/metrics/internal/repository"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"go.uber.org/zap"
 )
 
@@ -45,13 +47,25 @@ func main() {
 		restore = flagRestore
 	}
 
+	var databaseParams string
+	if envDatabaseParams != "" {
+		databaseParams = envDatabaseParams
+	} else {
+		databaseParams = flagDatabaseParams
+	}
+
+	db, err := sql.Open("pgx", databaseParams)
+	if err != nil {
+		logger.Log.Fatal("couldn't connect to database", zap.Error(err))
+	}
+
 	storage := repository.NewMemStorage(fileStoragePath, storeInterval, restore)
 	addr := envRunAddr
 	if addr == "" {
 		addr = flagRunAddr
 	}
 
-	r := handler.GetRouter(storage)
+	r := handler.GetRouter(storage, db)
 	logger.Log.Info("Server has been started", zap.String("addr", addr))
 	err = http.ListenAndServe(addr, r)
 	if err != nil {

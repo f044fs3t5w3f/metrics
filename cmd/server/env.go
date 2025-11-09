@@ -5,7 +5,7 @@ import (
 )
 
 var (
-	envRunAddr, envFileStoragePath, envStoreInterval, envRestore string
+	envRunAddr, envFileStoragePath, envStoreInterval, envRestore, envDatabaseParams string
 )
 
 func parseEnv() {
@@ -13,4 +13,5 @@ func parseEnv() {
 	envFileStoragePath = os.Getenv("FILE_STORAGE_PATH")
 	envStoreInterval = os.Getenv("STORE_INTERVAL")
 	envRestore = os.Getenv("RESTORE")
+	envDatabaseParams = os.Getenv("DATABASE_DSN")
 }

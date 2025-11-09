@@ -9,6 +9,7 @@ var (
 	flagFileStoragePath string
 	flagRestore         bool
 	flagStoreInterval   int64
+	flagDatabaseParams  string
 )
 
 func parseFlags() {
@@ -16,5 +17,6 @@ func parseFlags() {
 	flag.StringVar(&flagFileStoragePath, "f", "store.json", "storage file name. Default store.json")
 	flag.Int64Var(&flagStoreInterval, "i", 300, "interval (seconds) for saving metrics to disk. 0 enables synchronous writes. Default: 300")
 	flag.BoolVar(&flagRestore, "r", false, "restore metrics from file")
+	flag.StringVar(&flagDatabaseParams, "d", "", "Database params")
 	flag.Parse()
 }

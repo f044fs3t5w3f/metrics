@@ -116,7 +116,7 @@ func TestRouter(t *testing.T) {
 	}
 
 	storage := repository.NewMemStorageWithoutFile()
-	router := GetRouter(storage)
+	router := GetRouter(storage, nil)
 	ts := httptest.NewServer(router)
 	defer ts.Close()
 	for _, test := range tests {
@@ -168,7 +168,7 @@ func TestSequense(t *testing.T) {
 	}
 
 	storage := repository.NewMemStorageWithoutFile()
-	router := GetRouter(storage)
+	router := GetRouter(storage, nil)
 	ts := httptest.NewServer(router)
 	defer ts.Close()
 

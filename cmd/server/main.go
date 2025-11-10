@@ -59,6 +59,11 @@ func main() {
 		logger.Log.Fatal("couldn't connect to database", zap.Error(err))
 	}
 
+	err = migrateDB(db)
+	if err != nil {
+		logger.Log.Fatal("couldn't migrate database", zap.Error(err))
+	}
+
 	storage := repository.NewMemStorage(fileStoragePath, storeInterval, restore)
 	addr := envRunAddr
 	if addr == "" {

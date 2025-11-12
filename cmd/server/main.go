@@ -8,7 +8,7 @@ import (
 
 	"github.com/f044fs3t5w3f/metrics/internal/handler"
 	"github.com/f044fs3t5w3f/metrics/internal/logger"
-	"github.com/f044fs3t5w3f/metrics/internal/repository"
+	"github.com/f044fs3t5w3f/metrics/internal/repository/file"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"go.uber.org/zap"
 )
@@ -64,7 +64,7 @@ func main() {
 		logger.Log.Fatal("couldn't migrate database", zap.Error(err))
 	}
 
-	storage := repository.NewMemStorage(fileStoragePath, storeInterval, restore)
+	storage := file.NewFileStorage(fileStoragePath, storeInterval, restore)
 	addr := envRunAddr
 	if addr == "" {
 		addr = flagRunAddr

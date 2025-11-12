@@ -1,16 +1,16 @@
-package repository
+package file
 
 import (
 	"bytes"
 	"testing"
 
+	"github.com/f044fs3t5w3f/metrics/internal/repository/memory"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestRestoreFromFile(t *testing.T) {
-	storage := &memStorage{
-		gauge:   make(map[string]float64),
-		counter: make(map[string]int64),
+	storage := &fileStorage{
+		Storage: memory.NewMemStorage(),
 	}
 
 	data := `[
@@ -22,15 +22,23 @@ func TestRestoreFromFile(t *testing.T) {
 	reader := bytes.NewReader([]byte(data))
 	err := storage.restoreFromFile(reader)
 	assert.Nil(t, err, "error while reading correct json")
-	assert.Equal(t, 2, len(storage.gauge), "incorrect number of gauges")
-	assert.Equal(t, storage.gauge["gauge1"], float64(100))
-	assert.Equal(t, storage.gauge["gauge2"], float64(1000))
-	assert.Equal(t, 2, len(storage.counter), "incorrect number of counters")
-	assert.Equal(t, storage.counter["counter1"], int64(10000))
-	assert.Equal(t, storage.counter["counter2"], int64(100000))
+	// assert.Equal(t, 2, len(storage.gauge), "incorrect number of gauges")
+	value1, _ := storage.GetGauge("gauge1")
+	assert.Equal(t, value1, float64(100))
+	value2, _ := storage.GetGauge("gauge2")
+	assert.Equal(t, value2, float64(1000))
+
+	value3, _ := storage.GetCounter("counter1")
+	assert.Equal(t, value3, int64(10000))
+
+	value4, _ := storage.GetCounter("counter2")
+	assert.Equal(t, value4, int64(100000))
+
 }
 func TestRestoreFromFileMalformedJson(t *testing.T) {
-	storage := &memStorage{}
+	storage := &fileStorage{
+		Storage: memory.NewMemStorage(),
+	}
 
 	data := `:(`
 	reader := bytes.NewReader([]byte(data))

@@ -6,7 +6,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/f044fs3t5w3f/metrics/internal/repository"
+	"github.com/f044fs3t5w3f/metrics/internal/repository/memory"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -115,7 +116,7 @@ func TestRouter(t *testing.T) {
 		},
 	}
 
-	storage := repository.NewMemStorageWithoutFile()
+	storage := memory.NewMemStorage()
 	router := GetRouter(storage, nil)
 	ts := httptest.NewServer(router)
 	defer ts.Close()
@@ -167,7 +168,7 @@ func TestSequense(t *testing.T) {
 		},
 	}
 
-	storage := repository.NewMemStorageWithoutFile()
+	storage := memory.NewMemStorage()
 	router := GetRouter(storage, nil)
 	ts := httptest.NewServer(router)
 	defer ts.Close()

@@ -78,7 +78,7 @@ func (fs *fileStorage) saveToFile() {
 	}
 	defer file.Close()
 	encoder := json.NewEncoder(file)
-	metrics := fs.GetValuesList()
+	metrics, _ := fs.GetValuesList()
 	err = encoder.Encode(metrics)
 	if err != nil {
 		logger.Log.Warn("error while encoding metrics", zap.String("file", fs.fileStoragePath), zap.Error(err))
@@ -87,16 +87,18 @@ func (fs *fileStorage) saveToFile() {
 	}
 }
 
-func (fs *fileStorage) AddCounter(metricName string, value int64) {
+func (fs *fileStorage) AddCounter(metricName string, value int64) error {
 	fs.Storage.AddCounter(metricName, value)
 	if fs.saveToFileOnChange {
 		go fs.saveToFile()
 	}
+	return nil
 }
 
-func (fs *fileStorage) SetGauge(metricName string, value float64) {
+func (fs *fileStorage) SetGauge(metricName string, value float64) error {
 	fs.Storage.SetGauge(metricName, value)
 	if fs.saveToFileOnChange {
 		go fs.saveToFile()
 	}
+	return nil
 }

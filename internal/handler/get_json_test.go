@@ -17,11 +17,11 @@ type getTestMockStorage struct {
 }
 
 // GetValuesList implements repository.Storage.
-func (g *getTestMockStorage) GetValuesList() []models.Metrics {
+func (g *getTestMockStorage) GetValuesList() ([]models.Metrics, error) {
 	panic("unimplemented")
 }
 
-func (g *getTestMockStorage) AddCounter(metricName string, value int64) {
+func (g *getTestMockStorage) AddCounter(metricName string, value int64) error {
 	panic("unimplemented")
 }
 
@@ -41,7 +41,7 @@ func (g *getTestMockStorage) GetGauge(metricName string) (float64, error) {
 	}
 }
 
-func (g *getTestMockStorage) SetGauge(metricName string, value float64) {
+func (g *getTestMockStorage) SetGauge(metricName string, value float64) error {
 	panic("unimplemented")
 }
 

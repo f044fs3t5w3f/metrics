@@ -28,7 +28,7 @@ var tmpl *template.Template = template.Must(template.New("template").Parse(`
 func Index(storage repository.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
-		metrics := storage.GetValuesList()
+		metrics, _ := storage.GetValuesList()
 		tmpl.Execute(w, metrics)
 	}
 }

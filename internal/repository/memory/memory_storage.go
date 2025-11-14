@@ -24,7 +24,7 @@ type memStorage struct {
 	counter map[string]int64
 }
 
-func (m *memStorage) GetValuesList() []models.Metrics {
+func (m *memStorage) GetValuesList() ([]models.Metrics, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 	list := make([]models.Metrics, 0, len(m.gauge)+len(m.counter))
@@ -44,19 +44,21 @@ func (m *memStorage) GetValuesList() []models.Metrics {
 		}
 		list = append(list, metric)
 	}
-	return list
+	return list, nil
 }
 
-func (m *memStorage) AddCounter(metricName string, value int64) {
+func (m *memStorage) AddCounter(metricName string, value int64) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 	m.counter[metricName] += value
+	return nil
 }
 
-func (m *memStorage) SetGauge(metricName string, value float64) {
+func (m *memStorage) SetGauge(metricName string, value float64) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 	m.gauge[metricName] = value
+	return nil
 }
 
 func (m *memStorage) GetCounter(metricName string) (int64, error) {

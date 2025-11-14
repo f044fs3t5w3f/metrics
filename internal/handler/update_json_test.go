@@ -16,15 +16,15 @@ type updateTestMockStorage struct {
 	calls []string
 }
 
-// GetValuesList implements repository.Storage.
-func (m *updateTestMockStorage) GetValuesList() []models.Metrics {
+func (m *updateTestMockStorage) GetValuesList() ([]models.Metrics, error) {
 	panic("unimplemented")
 }
 
 var _ repository.Storage = &updateTestMockStorage{}
 
-func (m *updateTestMockStorage) AddCounter(metricName string, value int64) {
+func (m *updateTestMockStorage) AddCounter(metricName string, value int64) error {
 	m.calls = append(m.calls, fmt.Sprintf("counter;%s;%d", metricName, value))
+	return nil
 }
 
 func (m *updateTestMockStorage) GetCounter(metricName string) (int64, error) {
@@ -35,8 +35,9 @@ func (m *updateTestMockStorage) GetGauge(metricName string) (float64, error) {
 	panic("unimplemented")
 }
 
-func (m *updateTestMockStorage) SetGauge(metricName string, value float64) {
+func (m *updateTestMockStorage) SetGauge(metricName string, value float64) error {
 	m.calls = append(m.calls, fmt.Sprintf("gauge;%s;%f", metricName, value))
+	return nil
 }
 
 func TestUpdateJson(t *testing.T) {

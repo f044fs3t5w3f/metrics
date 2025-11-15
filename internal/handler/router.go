@@ -14,6 +14,7 @@ func GetRouter(storage repository.Storage, db *sql.DB) *chi.Mux {
 	r.Use(logger.RequestLogger, compress.Middleware)
 	r.Get("/ping", ping(db))
 	r.Post("/update/", UpdateJSON(storage))
+	r.Post("/updates/", UpdatesJSON(storage))
 	r.Post("/update/{metricType}/{mericName}/{metricValue}", Update(storage))
 	r.Get("/value/{metricType}/{mericName}", Get(storage))
 	r.Post("/value/", GetJSON(storage))

@@ -8,4 +8,5 @@ type Storage interface {
 	AddCounter(metricName string, value int64) error
 	SetGauge(metricName string, value float64) error
 	GetValuesList() ([]models.Metrics, error)
+	MultiUpdate([]*models.Metrics) error
 }

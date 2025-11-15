@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/f044fs3t5w3f/metrics/internal/logger"
@@ -19,6 +20,7 @@ type fileStorage struct {
 	saveToFileOnChange bool
 	fileStoragePath    string
 	lock               sync.Mutex
+	ignoreSaving       atomic.Bool
 }
 
 func NewFileStorage(fileStoragePath string, storeInterval int64, restore bool) repository.Storage {
@@ -46,6 +48,8 @@ func NewFileStorage(fileStoragePath string, storeInterval int64, restore bool) r
 	}
 	return storage
 }
+
+var _ repository.Storage = (*fileStorage)(nil)
 
 func (fs *fileStorage) restoreFromFile(r io.Reader) error {
 	metrics := make([]models.Metrics, 0)
@@ -89,7 +93,7 @@ func (fs *fileStorage) saveToFile() {
 
 func (fs *fileStorage) AddCounter(metricName string, value int64) error {
 	fs.Storage.AddCounter(metricName, value)
-	if fs.saveToFileOnChange {
+	if fs.saveToFileOnChange && !fs.ignoreSaving.Load() {
 		go fs.saveToFile()
 	}
 	return nil
@@ -97,8 +101,22 @@ func (fs *fileStorage) AddCounter(metricName string, value int64) error {
 
 func (fs *fileStorage) SetGauge(metricName string, value float64) error {
 	fs.Storage.SetGauge(metricName, value)
-	if fs.saveToFileOnChange {
+	if fs.saveToFileOnChange && !fs.ignoreSaving.Load() {
 		go fs.saveToFile()
 	}
 	return nil
+}
+
+func (fs *fileStorage) MultiUpdate(metrics []*models.Metrics) error {
+	fs.lock.Lock()
+	defer fs.lock.Unlock()
+	fs.ignoreSaving.Store(true)
+	defer fs.ignoreSaving.Store(false)
+	err := fs.Storage.MultiUpdate(metrics)
+	if err != nil {
+		if fs.saveToFileOnChange {
+			go fs.saveToFile()
+		}
+	}
+	return err
 }

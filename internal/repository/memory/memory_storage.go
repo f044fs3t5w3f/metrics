@@ -24,6 +24,22 @@ type memStorage struct {
 	counter map[string]int64
 }
 
+func (m *memStorage) MultiUpdate(metrics []*models.Metrics) error {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+	for _, metric := range metrics {
+		switch metric.MType {
+		case models.Counter:
+			m.counter[metric.ID] += *metric.Delta
+		case models.Gauge:
+			m.gauge[metric.ID] = *metric.Value
+		default:
+			continue
+		}
+	}
+	return nil
+}
+
 func (m *memStorage) GetValuesList() ([]models.Metrics, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()

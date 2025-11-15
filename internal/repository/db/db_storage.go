@@ -5,13 +5,26 @@ import (
 	"database/sql"
 
 	"github.com/f044fs3t5w3f/metrics/internal/models"
+	"github.com/f044fs3t5w3f/metrics/internal/repository"
 )
+
+type executor interface {
+	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
+	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
+	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
+}
 
 type dbStorage struct {
 	db *sql.DB
 }
 
+var _ repository.Storage = (*dbStorage)(nil)
+
 func (d *dbStorage) AddCounter(metricName string, value int64) error {
+	return d.addCounterExec(d.db, metricName, value)
+}
+
+func (d *dbStorage) addCounterExec(executor executor, metricName string, value int64) error {
 	ctx := context.Background()
 	row := d.db.QueryRowContext(ctx, `
 SELECT count(*) 
@@ -108,6 +121,10 @@ func (d *dbStorage) GetValuesList() ([]models.Metrics, error) {
 }
 
 func (d *dbStorage) SetGauge(metricName string, value float64) error {
+	return d.setGaugeExec(d.db, metricName, value)
+}
+
+func (d *dbStorage) setGaugeExec(executor executor, metricName string, value float64) error {
 	ctx := context.Background()
 	row := d.db.QueryRowContext(ctx, `
 SELECT count(*) 
@@ -136,6 +153,31 @@ WHERE name = $1 AND type = 'gauge'`, metricName)
 			metricName, value)
 		return err
 	}
+}
+
+func (d *dbStorage) MultiUpdate(metrics []*models.Metrics) error {
+	ctx := context.Background()
+	tx, err := d.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	for _, metric := range metrics {
+		var err error
+		switch metric.MType {
+		case models.Counter:
+			err = d.addCounterExec(tx, metric.ID, *metric.Delta)
+		case models.Gauge:
+			err = d.setGaugeExec(tx, metric.ID, *metric.Value)
+		}
+		if err != nil {
+			rollbackError := tx.Rollback()
+			if rollbackError != nil {
+				return rollbackError
+			}
+			return err
+		}
+	}
+	return tx.Commit()
 }
 
 func NewDBStorage(db *sql.DB) *dbStorage {

@@ -16,6 +16,11 @@ import (
 type getTestMockStorage struct {
 }
 
+// MultiUpdate implements repository.Storage.
+func (g *getTestMockStorage) MultiUpdate([]*models.Metrics) error {
+	panic("unimplemented")
+}
+
 // GetValuesList implements repository.Storage.
 func (g *getTestMockStorage) GetValuesList() ([]models.Metrics, error) {
 	panic("unimplemented")

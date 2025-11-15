@@ -14,16 +14,22 @@ import (
 )
 
 func ReportBatch(host string, batch MetricsBatch) {
-	for _, metric := range batch {
-		err := reportMetric(host, metric)
-		if err != nil {
-			logger.Log.Error(err.Error())
-		}
+	url := fmt.Sprintf("http://%s/updates/", host)
+	logger.Log.Info("to send metrics")
+	err := sendZippedJSON(url, batch)
+	if err != nil {
+		logger.Log.Error(err.Error())
 	}
+	// for _, metric := range batch {
+	// 	err := reportMetric(host, metric)
+	// 	if err != nil {
+	// 		logger.Log.Error(err.Error())
+	// 	}
+	// }
 }
 
-func getRequestBody(metric *models.Metrics) (io.Reader, error) {
-	jsonData, err := json.Marshal(metric)
+func getRequestBody(data any) (io.Reader, error) {
+	jsonData, err := json.Marshal(data)
 	if err != nil {
 		return nil, fmt.Errorf("marshalling metric error: %s", err)
 	}
@@ -34,10 +40,8 @@ func getRequestBody(metric *models.Metrics) (io.Reader, error) {
 	return &buf, nil
 }
 
-func reportMetric(host string, metric *models.Metrics) error {
-	url := fmt.Sprintf("http://%s/update/", host)
-	logger.Log.Info("to send metric", zap.String("type", metric.MType), zap.String("name", metric.ID))
-	body, err := getRequestBody(metric)
+func sendZippedJSON(url string, data any) error {
+	body, err := getRequestBody(data)
 	if err != nil {
 		return fmt.Errorf("getRequestBody: %s", err)
 	}
@@ -54,4 +58,10 @@ func reportMetric(host string, metric *models.Metrics) error {
 	}
 	response.Body.Close()
 	return nil
+}
+
+func reportMetric(host string, metric *models.Metrics) error {
+	url := fmt.Sprintf("http://%s/update/", host)
+	logger.Log.Info("to send metric", zap.String("type", metric.MType), zap.String("name", metric.ID))
+	return sendZippedJSON(url, metric)
 }

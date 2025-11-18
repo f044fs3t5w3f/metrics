@@ -21,7 +21,7 @@ func (d *dbStorage) retrier(executor executor) executor {
 }
 
 func (d *dbStorage) AddCounter(metricName string, value int64) error {
-	return d.addCounterExec(d.db, metricName, value)
+	return d.addCounterExec(d.retrier(d.db), metricName, value)
 }
 
 func (d *dbStorage) addCounterExec(executor executor, metricName string, value int64) error {

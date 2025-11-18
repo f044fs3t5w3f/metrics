@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/f044fs3t5w3f/metrics/internal/logger"
 	"github.com/f044fs3t5w3f/metrics/internal/models"
@@ -16,16 +17,19 @@ import (
 func ReportBatch(host string, batch MetricsBatch) {
 	url := fmt.Sprintf("http://%s/updates/", host)
 	logger.Log.Info("to send metrics")
-	err := sendZippedJSON(url, batch)
+
+	logError := func(err error, attempt uint8) {
+		logger.Log.Error("sendZippedJSON fail. Gonna retry", zap.Uint8("attempt", attempt), zap.Error(err))
+	}
+
+	// Маршалинг с очень маленькой вероятностью может дать ошибку в продакшене, поэтому нет ничего страшного,
+	// что потенциально мы можем и эту ошибку ретраить, что казалось бы бесполезно и безнадёжно.
+	err := retry(func() error {
+		return sendZippedJSON(url, batch)
+	}, []time.Duration{1 * time.Second, 3 * time.Second, 5 * time.Second}, logError)
 	if err != nil {
 		logger.Log.Error(err.Error())
 	}
-	// for _, metric := range batch {
-	// 	err := reportMetric(host, metric)
-	// 	if err != nil {
-	// 		logger.Log.Error(err.Error())
-	// 	}
-	// }
 }
 
 func getRequestBody(data any) (io.Reader, error) {
@@ -54,7 +58,7 @@ func sendZippedJSON(url string, data any) error {
 	req.Header.Set("Accept-Encoding", "gzip")
 	response, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("POST: %s", err)
+		return fmt.Errorf("POST: %w", err)
 	}
 	response.Body.Close()
 	return nil

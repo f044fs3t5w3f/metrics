@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/f044fs3t5w3f/metrics/internal/handler"
 	"github.com/f044fs3t5w3f/metrics/internal/logger"
@@ -15,6 +16,8 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"go.uber.org/zap"
 )
+
+var retryPolicy []time.Duration = []time.Duration{1 * time.Second, 3 * time.Second, 5 * time.Second}
 
 func main() {
 	parseFlags()
@@ -70,7 +73,7 @@ func main() {
 			logger.Log.Fatal("couldn't migrate database", zap.Error(err))
 		}
 
-		storage = dbRepo.NewDBStorage(db)
+		storage = dbRepo.NewDBStorage(db, retryPolicy)
 	}
 	if storage == nil {
 		storage = file.NewFileStorage(fileStoragePath, storeInterval, restore)

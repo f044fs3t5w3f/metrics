@@ -3,22 +3,22 @@ package db
 import (
 	"context"
 	"database/sql"
+	"time"
 
 	"github.com/f044fs3t5w3f/metrics/internal/models"
 	"github.com/f044fs3t5w3f/metrics/internal/repository"
 )
 
-type executor interface {
-	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
-	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
-	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
-}
-
 type dbStorage struct {
-	db *sql.DB
+	db          *sql.DB
+	retryPolicy []time.Duration
 }
 
 var _ repository.Storage = (*dbStorage)(nil)
+
+func (d *dbStorage) retrier(executor executor) executor {
+	return newRetrier(d.retryPolicy, executor)
+}
 
 func (d *dbStorage) AddCounter(metricName string, value int64) error {
 	return d.addCounterExec(d.db, metricName, value)
@@ -26,7 +26,7 @@ func (d *dbStorage) AddCounter(metricName string, value int64) error {
 
 func (d *dbStorage) addCounterExec(executor executor, metricName string, value int64) error {
 	ctx := context.Background()
-	row := d.db.QueryRowContext(ctx, `
+	row := executor.QueryRowContext(ctx, `
 SELECT count(*) 
 FROM metric 
 WHERE name = $1 AND type = 'counter'`, metricName)
@@ -40,14 +40,14 @@ WHERE name = $1 AND type = 'counter'`, metricName)
 		return err
 	}
 	if count > 0 {
-		_, err := d.db.ExecContext(ctx, `
+		_, err := executor.ExecContext(ctx, `
 			UPDATE metric
 			SET delta = delta + $1
 			WHERE name = $2 and type = 'counter'`,
 			value, metricName)
 		return err
 	} else {
-		_, err := d.db.ExecContext(ctx, `
+		_, err := executor.ExecContext(ctx, `
 			INSERT INTO metric (name, delta, type)
 			VALUES ($1, $2, 'counter')`,
 			metricName, value)
@@ -57,7 +57,7 @@ WHERE name = $1 AND type = 'counter'`, metricName)
 
 func (d *dbStorage) GetCounter(metricName string) (int64, error) {
 	ctx := context.Background()
-	row := d.db.QueryRowContext(ctx, `
+	row := d.retrier(d.db).QueryRowContext(ctx, `
 SELECT delta 
 FROM metric
 WHERE name = $1 and type = 'counter'`, metricName)
@@ -72,7 +72,7 @@ WHERE name = $1 and type = 'counter'`, metricName)
 
 func (d *dbStorage) GetGauge(metricName string) (float64, error) {
 	ctx := context.Background()
-	row := d.db.QueryRowContext(ctx, `
+	row := d.retrier(d.db).QueryRowContext(ctx, `
 SELECT value 
 FROM metric
 WHERE name = $1 and type = 'gauge'`, metricName)
@@ -87,7 +87,7 @@ WHERE name = $1 and type = 'gauge'`, metricName)
 
 func (d *dbStorage) GetValuesList() ([]models.Metrics, error) {
 	ctx := context.Background()
-	rows, err := d.db.QueryContext(ctx, "SELECT name, type, delta, value FROM metric")
+	rows, err := d.retrier(d.db).QueryContext(ctx, "SELECT name, type, delta, value FROM metric")
 	if err != nil {
 		return nil, err
 	}
@@ -121,12 +121,12 @@ func (d *dbStorage) GetValuesList() ([]models.Metrics, error) {
 }
 
 func (d *dbStorage) SetGauge(metricName string, value float64) error {
-	return d.setGaugeExec(d.db, metricName, value)
+	return d.setGaugeExec(d.retrier(d.db), metricName, value)
 }
 
 func (d *dbStorage) setGaugeExec(executor executor, metricName string, value float64) error {
 	ctx := context.Background()
-	row := d.db.QueryRowContext(ctx, `
+	row := executor.QueryRowContext(ctx, `
 SELECT count(*) 
 FROM metric 
 WHERE name = $1 AND type = 'gauge'`, metricName)
@@ -140,14 +140,14 @@ WHERE name = $1 AND type = 'gauge'`, metricName)
 		return err
 	}
 	if count > 0 {
-		_, err := d.db.ExecContext(ctx, `
+		_, err := executor.ExecContext(ctx, `
 			UPDATE metric
 			SET value = $1
 			WHERE name = $2 and type = 'gauge'`,
 			value, metricName)
 		return err
 	} else {
-		_, err := d.db.ExecContext(ctx, `
+		_, err := executor.ExecContext(ctx, `
 			INSERT INTO metric (name, value, type)
 			VALUES ($1, $2, 'gauge')`,
 			metricName, value)
@@ -161,13 +161,14 @@ func (d *dbStorage) MultiUpdate(metrics []*models.Metrics) error {
 	if err != nil {
 		return err
 	}
+	executor := d.retrier(tx)
 	for _, metric := range metrics {
 		var err error
 		switch metric.MType {
 		case models.Counter:
-			err = d.addCounterExec(tx, metric.ID, *metric.Delta)
+			err = d.addCounterExec(executor, metric.ID, *metric.Delta)
 		case models.Gauge:
-			err = d.setGaugeExec(tx, metric.ID, *metric.Value)
+			err = d.setGaugeExec(executor, metric.ID, *metric.Value)
 		}
 		if err != nil {
 			rollbackError := tx.Rollback()
@@ -180,8 +181,9 @@ func (d *dbStorage) MultiUpdate(metrics []*models.Metrics) error {
 	return tx.Commit()
 }
 
-func NewDBStorage(db *sql.DB) *dbStorage {
+func NewDBStorage(db *sql.DB, retryPolicy []time.Duration) *dbStorage {
 	return &dbStorage{
-		db: db,
+		db:          db,
+		retryPolicy: retryPolicy,
 	}
 }

@@ -26,33 +26,14 @@ func (d *dbStorage) AddCounter(metricName string, value int64) error {
 
 func (d *dbStorage) addCounterExec(executor executor, metricName string, value int64) error {
 	ctx := context.Background()
-	row := executor.QueryRowContext(ctx, `
-SELECT count(*) 
-FROM metric 
-WHERE name = $1 AND type = 'counter'`, metricName)
-	err := row.Err()
-	if err != nil {
-		return err
-	}
-	var count int8
-	err = row.Scan(&count)
-	if err != nil {
-		return err
-	}
-	if count > 0 {
-		_, err := executor.ExecContext(ctx, `
-			UPDATE metric
-			SET delta = delta + $1
-			WHERE name = $2 and type = 'counter'`,
-			value, metricName)
-		return err
-	} else {
-		_, err := executor.ExecContext(ctx, `
-			INSERT INTO metric (name, delta, type)
-			VALUES ($1, $2, 'counter')`,
-			metricName, value)
-		return err
-	}
+	_, err := executor.ExecContext(ctx, `
+		INSERT INTO metric (name, delta, type)
+		VALUES ($1, $2, 'counter')
+		ON CONFLICT (name, type) DO UPDATE
+		SET delta = EXCLUDED.delta + metric.delta
+		`,
+		metricName, value)
+	return err
 }
 
 func (d *dbStorage) GetCounter(metricName string) (int64, error) {
@@ -126,33 +107,13 @@ func (d *dbStorage) SetGauge(metricName string, value float64) error {
 
 func (d *dbStorage) setGaugeExec(executor executor, metricName string, value float64) error {
 	ctx := context.Background()
-	row := executor.QueryRowContext(ctx, `
-SELECT count(*) 
-FROM metric 
-WHERE name = $1 AND type = 'gauge'`, metricName)
-	err := row.Err()
-	if err != nil {
-		return err
-	}
-	var count int8
-	err = row.Scan(&count)
-	if err != nil {
-		return err
-	}
-	if count > 0 {
-		_, err := executor.ExecContext(ctx, `
-			UPDATE metric
-			SET value = $1
-			WHERE name = $2 and type = 'gauge'`,
-			value, metricName)
-		return err
-	} else {
-		_, err := executor.ExecContext(ctx, `
-			INSERT INTO metric (name, value, type)
-			VALUES ($1, $2, 'gauge')`,
-			metricName, value)
-		return err
-	}
+	_, err := executor.ExecContext(ctx, `
+		INSERT INTO metric (name, value, type)
+		VALUES ($1, $2, 'gauge')
+		ON CONFLICT (name, type) DO UPDATE
+		SET delta = EXCLUDED.value`,
+		metricName, value)
+	return err
 }
 
 func (d *dbStorage) MultiUpdate(metrics []*models.Metrics) error {

@@ -14,6 +14,10 @@ type dbStorage struct {
 	retryPolicy []time.Duration
 }
 
+func (d *dbStorage) Ping() error {
+	return d.db.Ping()
+}
+
 var _ repository.Storage = (*dbStorage)(nil)
 
 func (d *dbStorage) retrier(executor executor) executor {

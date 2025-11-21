@@ -16,6 +16,11 @@ import (
 type getTestMockStorage struct {
 }
 
+// Ping implements [repository.Storage].
+func (g *getTestMockStorage) Ping() error {
+	panic("unimplemented")
+}
+
 // MultiUpdate implements repository.Storage.
 func (g *getTestMockStorage) MultiUpdate([]*models.Metrics) error {
 	panic("unimplemented")

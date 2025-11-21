@@ -16,6 +16,11 @@ type updateTestMockStorage struct {
 	calls []string
 }
 
+// Ping implements [repository.Storage].
+func (m *updateTestMockStorage) Ping() error {
+	panic("unimplemented")
+}
+
 // MultiUpdate implements repository.Storage.
 func (m *updateTestMockStorage) MultiUpdate([]*models.Metrics) error {
 	panic("unimplemented")

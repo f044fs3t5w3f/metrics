@@ -24,6 +24,10 @@ type memStorage struct {
 	counter map[string]int64
 }
 
+func (m *memStorage) Ping() error {
+	return nil
+}
+
 func (m *memStorage) MultiUpdate(metrics []*models.Metrics) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()

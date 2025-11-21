@@ -84,7 +84,7 @@ func main() {
 		addr = flagRunAddr
 	}
 
-	r := handler.GetRouter(storage, db)
+	r := handler.GetRouter(storage)
 	logger.Log.Info("Server has been started", zap.String("addr", addr))
 	err = http.ListenAndServe(addr, r)
 	if err != nil {

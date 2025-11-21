@@ -1,18 +1,16 @@
 package handler
 
 import (
-	"database/sql"
-
 	"github.com/f044fs3t5w3f/metrics/internal/compress"
 	"github.com/f044fs3t5w3f/metrics/internal/logger"
 	"github.com/f044fs3t5w3f/metrics/internal/repository"
 	"github.com/go-chi/chi/v5"
 )
 
-func GetRouter(storage repository.Storage, db *sql.DB) *chi.Mux {
+func GetRouter(storage repository.Storage) *chi.Mux {
 	r := chi.NewRouter()
 	r.Use(logger.RequestLogger, compress.Middleware)
-	r.Get("/ping", ping(db))
+	r.Get("/ping", ping(storage))
 	r.Post("/update/", UpdateJSON(storage))
 	r.Post("/updates/", UpdatesJSON(storage))
 	r.Post("/update/{metricType}/{mericName}/{metricValue}", Update(storage))

@@ -14,49 +14,54 @@ type config struct {
 	databaseParams  string
 }
 
-func getString(envName string, flagName string, value string, usage string) string {
-	envValue := os.Getenv(envName)
-	if envValue != "" {
-		return envValue
+func envOrString(env string, fallback string) string {
+	if v := os.Getenv(env); v != "" {
+		return v
 	}
-	return *flag.String(flagName, value, usage)
+	return fallback
 }
 
-func getInt64(envName string, flagName string, value int64, usage string) (int64, error) {
-	envValue := os.Getenv(envName)
-	if envValue != "" {
-		return strconv.ParseInt(envValue, 10, 64)
+func envOrBool(env string, fallback bool) (bool, error) {
+	if v := os.Getenv(env); v != "" {
+		parsed, err := strconv.ParseBool(v)
+		return parsed, err
 	}
-	return *flag.Int64(flagName, value, usage), nil
+	return fallback, nil
 }
 
-func getBool(envName string, flagName string, value bool, usage string) (bool, error) {
-	envValue := os.Getenv(envName)
-	if envValue != "" {
-		return strconv.ParseBool(envValue)
+func envOrInt64(env string, fallback int64) (int64, error) {
+	if v := os.Getenv(env); v != "" {
+		return strconv.ParseInt(v, 10, 64)
 	}
-	return *flag.Bool(flagName, value, usage), nil
+	return fallback, nil
 }
 
 func getConfig() (*config, error) {
+	config := &config{}
+
+	addrFlag := flag.String("a", "localhost:8080", "server address")
+	fileFlag := flag.String("f", "store.json", "storage file")
+	dbFlag := flag.String("d", "", "database dsn")
+	intervalFlag := flag.Int64("i", 300, "store interval")
+	restoreFlag := flag.Bool("r", false, "restore on startup")
+
 	flag.Parse()
-	config := config{}
-	config.runAddr = getString("ADDRESS", "a", "localhost:8080", "address and port to run server")
-	config.fileStoragePath = getString("FILE_STORAGE_PATH", "f", "store.json", "storage file name. Default store.json")
-	config.databaseParams = getString("DATABASE_DSN", "d", "", "Database params")
-	storeInterval, err := getInt64("STORE_INTERVAL", "i", 300, "interval (seconds) for saving metrics to disk. 0 enables synchronous writes. Default: 300")
+
+	config.runAddr = envOrString("ADDRESS", *addrFlag)
+	config.fileStoragePath = envOrString("FILE_STORAGE_PATH", *fileFlag)
+	config.databaseParams = envOrString("DATABASE_DSN", *dbFlag)
+
+	interval, err := envOrInt64("STORE_INTERVAL", *intervalFlag)
 	if err != nil {
 		return nil, err
 	}
-	config.storeInterval = storeInterval
+	config.storeInterval = interval
 
-	restore, err := getBool("RESTORE", "r", false, "restore metrics from file")
+	restore, err := envOrBool("RESTORE", *restoreFlag)
 	if err != nil {
 		return nil, err
 	}
 	config.restore = restore
 
-	return &config, nil
+	return config, nil
 }
-
-// getEnvString(envName string, fallBack string) err

@@ -115,7 +115,7 @@ func (d *dbStorage) setGaugeExec(executor executor, metricName string, value flo
 		INSERT INTO metric (name, value, type)
 		VALUES ($1, $2, 'gauge')
 		ON CONFLICT (name, type) DO UPDATE
-		SET delta = EXCLUDED.value`,
+		SET value = EXCLUDED.value`,
 		metricName, value)
 	return err
 }

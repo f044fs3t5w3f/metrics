@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"log"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/f044fs3t5w3f/metrics/internal/handler"
@@ -20,49 +19,19 @@ import (
 var retryPolicy []time.Duration = []time.Duration{1 * time.Second, 3 * time.Second, 5 * time.Second}
 
 func main() {
-	parseFlags()
-	parseEnv()
-	err := logger.Initialize("INFO")
+	config, err := getConfig()
+	if err != nil {
+		log.Fatalf("Config init: %s", err.Error())
+	}
+	err = logger.Initialize("INFO")
 	if err != nil {
 		log.Fatalf("couldn't initialize logger: %s", err.Error())
 	}
 
-	fileStoragePath := envFileStoragePath
-	if fileStoragePath == "" {
-		fileStoragePath = flagFileStoragePath
-	}
-
-	var storeInterval int64
-	if envStoreInterval != "" {
-		var err error
-		storeInterval, err = strconv.ParseInt(envStoreInterval, 10, 64)
-		if err != nil {
-			logger.Log.Fatal("couldn't parse store interval env", zap.Error(err))
-		}
-	} else {
-		storeInterval = flagStoreInterval
-	}
-
-	var restore bool
-	if envRestore != "" {
-		restore, err = strconv.ParseBool(envRestore)
-		if err != nil {
-			logger.Log.Fatal("Incorrect value of environment variable RESTORE", zap.String("value", envRestore))
-		}
-	} else {
-		restore = flagRestore
-	}
 	var storage repository.Storage
 
-	var databaseParams string
-	var db *sql.DB
-	if envDatabaseParams != "" {
-		databaseParams = envDatabaseParams
-	} else {
-		databaseParams = flagDatabaseParams
-	}
-	if databaseParams != "" {
-		db, err = sql.Open("pgx", databaseParams)
+	if config.databaseParams != "" {
+		db, err := sql.Open("pgx", config.databaseParams)
 		if err != nil {
 			logger.Log.Fatal("couldn't connect to database", zap.Error(err))
 		}
@@ -76,17 +45,12 @@ func main() {
 		storage = dbRepo.NewDBStorage(db, retryPolicy)
 	}
 	if storage == nil {
-		storage = file.NewFileStorage(fileStoragePath, storeInterval, restore)
-
-	}
-	addr := envRunAddr
-	if addr == "" {
-		addr = flagRunAddr
+		storage = file.NewFileStorage(config.fileStoragePath, config.storeInterval, config.restore)
 	}
 
 	r := handler.GetRouter(storage)
-	logger.Log.Info("Server has been started", zap.String("addr", addr))
-	err = http.ListenAndServe(addr, r)
+	logger.Log.Info("Server has been started", zap.String("addr", config.runAddr))
+	err = http.ListenAndServe(config.runAddr, r)
 	if err != nil {
 		logger.Log.Fatal("couldn't start server", zap.Error(err))
 	}

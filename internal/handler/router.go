@@ -10,7 +10,9 @@ import (
 func GetRouter(storage repository.Storage) *chi.Mux {
 	r := chi.NewRouter()
 	r.Use(logger.RequestLogger, compress.Middleware)
+	r.Get("/ping", ping(storage))
 	r.Post("/update/", UpdateJSON(storage))
+	r.Post("/updates/", UpdatesJSON(storage))
 	r.Post("/update/{metricType}/{mericName}/{metricValue}", Update(storage))
 	r.Get("/value/{metricType}/{mericName}", Get(storage))
 	r.Post("/value/", GetJSON(storage))

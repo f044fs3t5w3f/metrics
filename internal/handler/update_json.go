@@ -26,14 +26,20 @@ func UpdateJSON(storage repository.Storage) http.HandlerFunc {
 				http.Error(w, "Bad request", http.StatusBadRequest)
 				return
 			}
-			storage.SetGauge(metric.ID, *metric.Value)
+			err := storage.SetGauge(metric.ID, *metric.Value)
+			if err != nil {
+				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			}
 			return
 		case models.Counter:
 			if metric.Delta == nil {
 				http.Error(w, "Bad request", http.StatusBadRequest)
 				return
 			}
-			storage.AddCounter(metric.ID, *metric.Delta)
+			err := storage.AddCounter(metric.ID, *metric.Delta)
+			if err != nil {
+				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			}
 			return
 		default:
 			http.Error(w, "Bad request", http.StatusBadRequest)

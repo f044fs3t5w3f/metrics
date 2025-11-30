@@ -48,7 +48,7 @@ func main() {
 		storage = file.NewFileStorage(config.fileStoragePath, config.storeInterval, config.restore)
 	}
 
-	r := handler.GetRouter(storage)
+	r := handler.GetRouter(storage, config.key)
 	logger.Log.Info("Server has been started", zap.String("addr", config.runAddr))
 	err = http.ListenAndServe(config.runAddr, r)
 	if err != nil {

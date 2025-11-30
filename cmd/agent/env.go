@@ -9,6 +9,7 @@ var (
 	envRunAddr        string
 	envReportInterval int64
 	envPollInterval   int64
+	envKey            string
 )
 
 func parseEnv() {
@@ -30,4 +31,6 @@ func parseEnv() {
 			panic("POLL_INTERVAL parse error")
 		}
 	}
+
+	envKey = os.Getenv("KEY")
 }

@@ -18,6 +18,11 @@ func main() {
 		pollInterval = flagPollInterval
 	}
 
+	key := envKey
+	if key == "" {
+		key = flagKey
+	}
+
 	reportInterval := envReportInterval
 	if reportInterval == 0 {
 		reportInterval = flagReportInterval
@@ -44,7 +49,7 @@ func main() {
 			}
 			lastBatch := store[len(store)-1]
 			lock.Unlock()
-			agent.ReportBatch(addr, lastBatch)
+			agent.ReportBatch(addr, lastBatch, key)
 			time.Sleep(time.Duration(reportInterval) * time.Second)
 		}
 	}()

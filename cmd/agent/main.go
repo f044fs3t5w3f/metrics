@@ -42,10 +42,6 @@ func main() {
 		pool = make(chan struct{}, rateLimit)
 	}
 
-	if envRateLimit > 0 {
-
-	}
-
 	lock := sync.Mutex{}
 	var counter int64 = 0
 	store := make([]agent.MetricsBatch, 0)

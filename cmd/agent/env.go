@@ -10,6 +10,7 @@ var (
 	envReportInterval int64
 	envPollInterval   int64
 	envKey            string
+	envRateLimit      int64
 )
 
 func parseEnv() {
@@ -29,6 +30,14 @@ func parseEnv() {
 		envPollInterval, err = strconv.ParseInt(envPollIntervalStr, 10, 64)
 		if err != nil {
 			panic("POLL_INTERVAL parse error")
+		}
+	}
+
+	envRateLimitStr := os.Getenv("RATE_LIMIT")
+	if envRateLimitStr != "" {
+		envRateLimit, err = strconv.ParseInt(envPollIntervalStr, 10, 64)
+		if err != nil {
+			panic("RATE_LIMIT parse error")
 		}
 	}
 

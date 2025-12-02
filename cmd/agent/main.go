@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"sync"
 	"time"
@@ -33,6 +34,19 @@ func main() {
 		addr = flagEndpointAddr
 	}
 
+	rateLimit := envRateLimit
+	if envRateLimit == 0 {
+		rateLimit = flagRateLimit
+	}
+	var pool chan struct{}
+	if rateLimit > 0 {
+		pool = make(chan struct{}, rateLimit)
+	}
+
+	if envRateLimit > 0 {
+
+	}
+
 	lock := sync.Mutex{}
 	var counter int64 = 0
 	store := make([]agent.MetricsBatch, 0)
@@ -49,7 +63,17 @@ func main() {
 			}
 			lastBatch := store[len(store)-1]
 			lock.Unlock()
-			agent.ReportBatch(addr, lastBatch, key)
+			go func() {
+				fmt.Println(rateLimit)
+				if pool != nil {
+					pool <- struct{}{}
+					defer func() {
+						<-pool
+					}()
+				}
+				agent.ReportBatch(addr, lastBatch, key)
+			}()
+
 			time.Sleep(time.Duration(reportInterval) * time.Second)
 		}
 	}()

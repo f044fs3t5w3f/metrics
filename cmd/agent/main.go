@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"sync"
 	"time"
@@ -64,7 +63,6 @@ func main() {
 			lastBatch := store[len(store)-1]
 			lock.Unlock()
 			go func() {
-				fmt.Println(rateLimit)
 				if pool != nil {
 					pool <- struct{}{}
 					defer func() {

@@ -12,6 +12,7 @@ type config struct {
 	restore         bool
 	storeInterval   int64
 	databaseParams  string
+	key             string
 }
 
 func envOrString(env string, fallback string) string {
@@ -41,6 +42,7 @@ func getConfig() (*config, error) {
 
 	addrFlag := flag.String("a", "localhost:8080", "server address")
 	fileFlag := flag.String("f", "store.json", "storage file")
+	keyFlag := flag.String("k", "", "key")
 	dbFlag := flag.String("d", "", "database dsn")
 	intervalFlag := flag.Int64("i", 300, "store interval")
 	restoreFlag := flag.Bool("r", false, "restore on startup")
@@ -50,6 +52,7 @@ func getConfig() (*config, error) {
 	config.runAddr = envOrString("ADDRESS", *addrFlag)
 	config.fileStoragePath = envOrString("FILE_STORAGE_PATH", *fileFlag)
 	config.databaseParams = envOrString("DATABASE_DSN", *dbFlag)
+	config.key = envOrString("KEY", *keyFlag)
 
 	interval, err := envOrInt64("STORE_INTERVAL", *intervalFlag)
 	if err != nil {

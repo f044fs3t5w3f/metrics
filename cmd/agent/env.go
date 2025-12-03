@@ -35,7 +35,7 @@ func parseEnv() {
 
 	envRateLimitStr := os.Getenv("RATE_LIMIT")
 	if envRateLimitStr != "" {
-		envRateLimit, err = strconv.ParseInt(envPollIntervalStr, 10, 64)
+		envRateLimit, err = strconv.ParseInt(envRateLimitStr, 10, 64)
 		if err != nil {
 			panic("RATE_LIMIT parse error")
 		}

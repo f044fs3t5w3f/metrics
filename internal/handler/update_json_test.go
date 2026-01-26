@@ -9,6 +9,7 @@ import (
 
 	"github.com/f044fs3t5w3f/metrics/internal/models"
 	"github.com/f044fs3t5w3f/metrics/internal/repository"
+	"github.com/f044fs3t5w3f/metrics/internal/service"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -68,7 +69,8 @@ func TestUpdateJson(t *testing.T) {
 
 	for _, tCase := range testCases {
 		storage := &updateTestMockStorage{calls: []string{}}
-		handler := UpdateJSON(storage)
+		service := service.NewService(storage)
+		handler := UpdateJSON(service)
 		t.Run(tCase.name, func(t *testing.T) {
 			body := strings.NewReader(tCase.body)
 			req := httptest.NewRequest(http.MethodPost, "/", body)

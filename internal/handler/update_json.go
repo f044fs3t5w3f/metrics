@@ -5,10 +5,10 @@ import (
 	"net/http"
 
 	"github.com/f044fs3t5w3f/metrics/internal/models"
-	"github.com/f044fs3t5w3f/metrics/internal/repository"
+	"github.com/f044fs3t5w3f/metrics/internal/service"
 )
 
-func UpdateJSON(storage repository.Storage) http.HandlerFunc {
+func UpdateJSON(s *service.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var metric models.Metrics
 		defer r.Body.Close()
@@ -20,30 +20,14 @@ func UpdateJSON(storage repository.Storage) http.HandlerFunc {
 			return
 		}
 
-		switch metric.MType {
-		case models.Gauge:
-			if metric.Value == nil {
+		err = s.UpdateMetric(metric)
+		if err != nil {
+			switch err {
+			case service.ErrBadValue:
 				http.Error(w, "Bad request", http.StatusBadRequest)
-				return
-			}
-			err := storage.SetGauge(metric.ID, *metric.Value)
-			if err != nil {
+			default:
 				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			}
-			return
-		case models.Counter:
-			if metric.Delta == nil {
-				http.Error(w, "Bad request", http.StatusBadRequest)
-				return
-			}
-			err := storage.AddCounter(metric.ID, *metric.Delta)
-			if err != nil {
-				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-			}
-			return
-		default:
-			http.Error(w, "Bad request", http.StatusBadRequest)
-			return
 		}
 	}
 }

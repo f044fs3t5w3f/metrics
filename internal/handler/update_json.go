@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 
@@ -20,7 +21,8 @@ func UpdateJSON(s *service.Service) http.HandlerFunc {
 			return
 		}
 
-		err = s.UpdateMetric(metric)
+		ctx := context.WithValue(r.Context(), service.CtxUserIP, r.RemoteAddr)
+		err = s.UpdateMetric(ctx, metric)
 		if err != nil {
 			switch err {
 			case service.ErrBadValue:

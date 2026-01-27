@@ -1,10 +1,20 @@
 package service
 
 import (
+	"context"
+	"time"
+
+	"github.com/f044fs3t5w3f/metrics/internal/audit"
 	"github.com/f044fs3t5w3f/metrics/internal/models"
 )
 
-func (s *Service) UpdateMetric(metric models.Metrics) error {
+func (s *Service) UpdateMetric(ctx context.Context, metric models.Metrics) error {
+	ev := audit.Event{
+		Metrics:   []string{metric.ID},
+		IP:        ctx.Value(CtxUserIP).(string),
+		Timestamp: time.Now().Unix(),
+	}
+	s.audit.Notify(&ev)
 
 	switch metric.MType {
 	case models.Gauge:

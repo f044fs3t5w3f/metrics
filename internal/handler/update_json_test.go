@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/f044fs3t5w3f/metrics/internal/audit"
 	"github.com/f044fs3t5w3f/metrics/internal/models"
 	"github.com/f044fs3t5w3f/metrics/internal/repository"
 	"github.com/f044fs3t5w3f/metrics/internal/service"
@@ -69,7 +70,7 @@ func TestUpdateJson(t *testing.T) {
 
 	for _, tCase := range testCases {
 		storage := &updateTestMockStorage{calls: []string{}}
-		service := service.NewService(storage)
+		service := service.NewService(storage, audit.Dummy{})
 		handler := UpdateJSON(service)
 		t.Run(tCase.name, func(t *testing.T) {
 			body := strings.NewReader(tCase.body)

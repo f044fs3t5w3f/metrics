@@ -3,6 +3,7 @@ package agent
 import (
 	"bytes"
 	"compress/gzip"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -10,11 +11,11 @@ import (
 	"time"
 
 	"github.com/f044fs3t5w3f/metrics/internal/logger"
-	"github.com/f044fs3t5w3f/metrics/internal/models"
+	"github.com/f044fs3t5w3f/metrics/internal/sign"
 	"go.uber.org/zap"
 )
 
-func ReportBatch(host string, batch MetricsBatch) {
+func ReportBatch(host string, batch MetricsBatch, key string) {
 	url := fmt.Sprintf("http://%s/updates/", host)
 	logger.Log.Info("to send metrics")
 
@@ -25,7 +26,7 @@ func ReportBatch(host string, batch MetricsBatch) {
 	// Маршалинг с очень маленькой вероятностью может дать ошибку в продакшене, поэтому нет ничего страшного,
 	// что потенциально мы можем и эту ошибку ретраить, что казалось бы бесполезно и безнадёжно.
 	err := retry(func() error {
-		return sendZippedJSON(url, batch)
+		return sendZippedJSON(url, batch, key)
 	}, []time.Duration{1 * time.Second, 3 * time.Second, 5 * time.Second}, logError)
 	if err != nil {
 		logger.Log.Error(err.Error())
@@ -44,11 +45,19 @@ func getRequestBody(data any) (io.Reader, error) {
 	return &buf, nil
 }
 
-func sendZippedJSON(url string, data any) error {
+func sendZippedJSON(url string, data any, key string) error {
 	body, err := getRequestBody(data)
 	if err != nil {
 		return fmt.Errorf("getRequestBody: %s", err)
 	}
+	var hash []byte
+	if key != "" {
+		signFunc := sign.GetSignFunc(key)
+		data, _ := io.ReadAll(body)
+		hash = signFunc(data)
+		body = bytes.NewReader(data)
+	}
+
 	req, err := http.NewRequest(http.MethodPost, url, body)
 	if err != nil {
 		return fmt.Errorf("creating request error: %s", err)
@@ -56,6 +65,10 @@ func sendZippedJSON(url string, data any) error {
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Content-Encoding", "gzip")
 	req.Header.Set("Accept-Encoding", "gzip")
+	if len(hash) > 0 {
+		base64String := base64.StdEncoding.EncodeToString(hash)
+		req.Header.Set("HashSHA256", base64String)
+	}
 	response, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("POST: %w", err)
@@ -64,8 +77,8 @@ func sendZippedJSON(url string, data any) error {
 	return nil
 }
 
-func reportMetric(host string, metric *models.Metrics) error {
-	url := fmt.Sprintf("http://%s/update/", host)
-	logger.Log.Info("to send metric", zap.String("type", metric.MType), zap.String("name", metric.ID))
-	return sendZippedJSON(url, metric)
-}
+// func reportMetric(host string, metric *models.Metrics) error {
+// 	url := fmt.Sprintf("http://%s/update/", host)
+// 	logger.Log.Info("to send metric", zap.String("type", metric.MType), zap.String("name", metric.ID))
+// 	return sendZippedJSON(url, metric)
+// }

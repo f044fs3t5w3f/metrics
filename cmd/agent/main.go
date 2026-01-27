@@ -18,6 +18,11 @@ func main() {
 		pollInterval = flagPollInterval
 	}
 
+	key := envKey
+	if key == "" {
+		key = flagKey
+	}
+
 	reportInterval := envReportInterval
 	if reportInterval == 0 {
 		reportInterval = flagReportInterval
@@ -26,6 +31,15 @@ func main() {
 	addr := envRunAddr
 	if addr == "" {
 		addr = flagEndpointAddr
+	}
+
+	rateLimit := envRateLimit
+	if envRateLimit == 0 {
+		rateLimit = flagRateLimit
+	}
+	var pool chan struct{}
+	if rateLimit > 0 {
+		pool = make(chan struct{}, rateLimit)
 	}
 
 	lock := sync.Mutex{}
@@ -44,7 +58,16 @@ func main() {
 			}
 			lastBatch := store[len(store)-1]
 			lock.Unlock()
-			agent.ReportBatch(addr, lastBatch)
+			go func() {
+				if pool != nil {
+					pool <- struct{}{}
+					defer func() {
+						<-pool
+					}()
+				}
+				agent.ReportBatch(addr, lastBatch, key)
+			}()
+
 			time.Sleep(time.Duration(reportInterval) * time.Second)
 		}
 	}()

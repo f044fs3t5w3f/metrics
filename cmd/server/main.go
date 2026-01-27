@@ -6,11 +6,13 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/f044fs3t5w3f/metrics/internal/audit"
 	"github.com/f044fs3t5w3f/metrics/internal/handler"
 	"github.com/f044fs3t5w3f/metrics/internal/logger"
 	"github.com/f044fs3t5w3f/metrics/internal/repository"
 	dbRepo "github.com/f044fs3t5w3f/metrics/internal/repository/db"
 	"github.com/f044fs3t5w3f/metrics/internal/repository/file"
+	"github.com/f044fs3t5w3f/metrics/internal/service"
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"go.uber.org/zap"
@@ -48,7 +50,22 @@ func main() {
 		storage = file.NewFileStorage(config.fileStoragePath, config.storeInterval, config.restore)
 	}
 
-	r := handler.GetRouter(storage, config.key)
+	auditPublisher := audit.NewAuditPublisher(nil)
+	if config.auditURL != "" {
+		auditPublisher.AddSubscriber(audit.NewRemoteAudit(config.auditURL))
+
+	}
+	if config.auditFile != "" {
+		fileAudit, err := audit.NewFileAudit(config.auditFile)
+		if err == nil {
+			auditPublisher.AddSubscriber(fileAudit)
+		} else {
+			logger.Log.Info("audit: cannot open file", zap.String("file", config.auditFile))
+		}
+	}
+
+	service := service.NewService(storage, auditPublisher)
+	r := handler.GetRouter(storage, service, config.key)
 	logger.Log.Info("Server has been started", zap.String("addr", config.runAddr))
 	err = http.ListenAndServe(config.runAddr, r)
 	if err != nil {

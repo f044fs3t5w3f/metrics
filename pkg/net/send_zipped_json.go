@@ -1,3 +1,5 @@
+// Net package provides functions for sending data to the remote server.
+
 package net
 
 import (
@@ -9,9 +11,16 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/f044fs3t5w3f/metrics/internal/sign"
+	"github.com/f044fs3t5w3f/metrics/pkg/sign"
 )
 
+// SendZippedSignedJSON sends data to the remote server with signature.
+//
+// url - remote server url
+//
+// data - any jsonable object
+//
+// key - secret key for signature
 func SendZippedSignedJSON(url string, data any, key string) error {
 	body, err := getRequestBody(data)
 	if err != nil {
@@ -44,6 +53,11 @@ func SendZippedSignedJSON(url string, data any, key string) error {
 	return nil
 }
 
+// SendZippedJSON sends data to the remote server.
+//
+// url - remote server url
+//
+// data - any jsonable object
 func SendZippedJSON(url string, data any) error {
 	return SendZippedSignedJSON(url, data, "")
 }

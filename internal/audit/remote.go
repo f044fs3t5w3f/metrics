@@ -7,13 +7,15 @@ type RemoteAudit struct {
 }
 
 // TODO: use client
-
 func (r *RemoteAudit) Notify(ev *Event) {
 	go func() {
 		net.SendZippedJSON(r.url, ev)
 	}()
 }
 
+// NewFileAudit creates new RemoteAudit
+// url - remote url for accepting events
+// returns *RemoteAudit
 func NewRemoteAudit(url string) *RemoteAudit {
 	return &RemoteAudit{
 		url: url,

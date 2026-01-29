@@ -8,6 +8,7 @@ import (
 	"github.com/f044fs3t5w3f/metrics/internal/repository"
 )
 
+// GetJSON returns metric by type and name. Returns JSON
 func GetJSON(storage repository.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var metric *models.Metrics

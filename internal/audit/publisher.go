@@ -1,5 +1,6 @@
 package audit
 
+// Publisher is struct using as linker of different audit implementations
 type Publisher struct {
 	subscribers []Audit
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
+// Get returns metric by type and name. Returns plain text
 func Get(storage repository.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		type_ := chi.URLParam(r, "metricType")

@@ -1,14 +1,21 @@
 package handler
 
 import (
-	"github.com/f044fs3t5w3f/metrics/internal/compress"
 	"github.com/f044fs3t5w3f/metrics/internal/logger"
 	"github.com/f044fs3t5w3f/metrics/internal/repository"
 	"github.com/f044fs3t5w3f/metrics/internal/service"
-	"github.com/f044fs3t5w3f/metrics/internal/sign"
+	"github.com/f044fs3t5w3f/metrics/pkg/compress"
+	"github.com/f044fs3t5w3f/metrics/pkg/sign"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 )
+
+// GetRouter returns router for mertics services
+// TODO: use service in every handler functions instead of storage
+// Params:
+// - storage: storage for metrics (to be removed)
+// - service: service for metrics
+// - key: key for sign middleware
 
 func GetRouter(storage repository.Storage, service *service.Service, key string) *chi.Mux {
 	// service := service.NewService(storage)

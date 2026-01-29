@@ -18,7 +18,21 @@ func (sw *signWriter) Write(b []byte) (int, error) {
 	return sw.buf.Write(b)
 }
 
-func GetSignMiddleware(signFunc signFunc) middleware {
+// GetSignMiddleware returns an HTTP middleware that verifies the request's signature (if present) and signs the response.
+//
+// The middleware:
+//  1. Checks for the "HashSHA256" header in the incoming request.
+//  2. If the header is present, it computes request body hash using the provided signFunc,
+//     and compares it with the value in the header. If they don't match, it returns a 400 error.
+//  3. If the signature is valid or not required, it proceeds to serve the request.
+//  4. In case if request HashSHA256 header was provided it signs the response body using the same function.
+//
+// Parameters:
+//   - signFunc: A function that computes the hash/signature of a given byte slice.
+//
+// Returns:
+//   - A middleware that applies request signature verification and response signing.
+func GetSignMiddleware(signFunc SignFunc) middleware {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			hashHeader := r.Header.Get("HashSHA256")
@@ -50,7 +64,6 @@ func GetSignMiddleware(signFunc signFunc) middleware {
 
 			next.ServeHTTP(sw, r)
 
-			// считаем подпись ответа
 			resp := buf.Bytes()
 			respHash := signFunc(resp)
 			respHashB64 := base64.StdEncoding.EncodeToString(respHash)

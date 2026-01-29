@@ -8,6 +8,8 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
+// Update updates metric with parameters from URL
+// In case of incorrect request returns 400
 func Update(s *service.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		type_ := chi.URLParam(r, "metricType")

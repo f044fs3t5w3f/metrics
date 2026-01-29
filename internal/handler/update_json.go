@@ -9,6 +9,8 @@ import (
 	"github.com/f044fs3t5w3f/metrics/internal/service"
 )
 
+// UpdateJSON updates metric with JSON request
+// In case of incorrect request returns 400
 func UpdateJSON(s *service.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var metric models.Metrics

@@ -1,14 +1,17 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 
 	"github.com/f044fs3t5w3f/metrics/internal/models"
-	"github.com/f044fs3t5w3f/metrics/internal/repository"
+	"github.com/f044fs3t5w3f/metrics/internal/service"
 )
 
-func UpdatesJSON(storage repository.Storage) http.HandlerFunc {
+// UpdatesJSON updates list of metric with JSON request
+// In case of incorrect request returns 400
+func UpdatesJSON(s *service.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		metrics := []*models.Metrics{}
 		defer r.Body.Close()
@@ -19,8 +22,9 @@ func UpdatesJSON(storage repository.Storage) http.HandlerFunc {
 			http.Error(w, "Bad request", http.StatusBadRequest)
 			return
 		}
+		ctx := context.WithValue(r.Context(), service.CtxUserIP, r.RemoteAddr)
+		err = s.UpdateMetrics(ctx, metrics)
 
-		err = storage.MultiUpdate(metrics)
 		if err != nil {
 			http.Error(w, "Bad request", http.StatusBadRequest)
 			return

@@ -25,6 +25,7 @@ var tmpl *template.Template = template.Must(template.New("template").Parse(`
 </html>
 `))
 
+// Index returns the list of all the metrics
 func Index(storage repository.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")

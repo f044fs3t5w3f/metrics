@@ -7,13 +7,18 @@ import (
 	"time"
 
 	"github.com/f044fs3t5w3f/metrics/internal/audit"
+	"github.com/f044fs3t5w3f/metrics/internal/logger"
 	"github.com/f044fs3t5w3f/metrics/internal/models"
 )
 
 func (s *Service) Update(ctx context.Context, type_, metricName, merticValueStr string) error {
+	ip, ok := ctx.Value(CtxUserIP).(string)
+	if !ok {
+		logger.Log.Warn("incorrect CtxUserIP value cast to string")
+	}
 	ev := audit.Event{
 		Metrics:   []string{metricName},
-		IP:        ctx.Value(CtxUserIP).(string),
+		IP:        ip,
 		Timestamp: time.Now().Unix(),
 	}
 	s.audit.Notify(&ev)

@@ -1,9 +1,14 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"log"
+	"net"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/f044fs3t5w3f/metrics/internal/audit"
@@ -16,8 +21,7 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"go.uber.org/zap"
-
-	_ "net/http/pprof"
+	// _ "net/http/pprof"
 )
 
 var retryPolicy []time.Duration = []time.Duration{1 * time.Second, 3 * time.Second, 5 * time.Second}
@@ -31,6 +35,9 @@ func main() {
 	if err != nil {
 		log.Fatalf("couldn't initialize logger: %s", err.Error())
 	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	var storage repository.Storage
 
@@ -55,23 +62,49 @@ func main() {
 	auditPublisher := audit.NewAuditPublisher(nil)
 	if config.auditURL != "" {
 		auditPublisher.AddSubscriber(audit.NewRemoteAudit(config.auditURL))
-
 	}
+	var fileAuditCleanup func()
 	if config.auditFile != "" {
-		fileAudit, err := audit.NewFileAudit(config.auditFile)
+		fileAudit, err := audit.NewFileAudit(ctx, config.auditFile)
+		fileAuditCleanup = fileAudit.Close
 		if err == nil {
 			auditPublisher.AddSubscriber(fileAudit)
 		} else {
 			logger.Log.Info("audit: cannot open file", zap.String("file", config.auditFile))
 		}
 	}
+	signals := make(chan os.Signal, 1)
+	signal.Notify(signals, os.Interrupt, syscall.SIGTERM, syscall.SIGTRAP)
 
 	service := service.NewService(storage, auditPublisher)
-	r := handler.GetRouter(storage, service, config.key)
-	logger.Log.Info("Server has been started", zap.String("addr", config.runAddr))
-	go http.ListenAndServe(":8088", nil)
-	err = http.ListenAndServe(config.runAddr, r)
-	if err != nil {
-		logger.Log.Fatal("couldn't start server", zap.Error(err))
+	service.AddCleanup(fileAuditCleanup)
+
+	router := handler.GetRouter(storage, service, config.key)
+
+	srv := &http.Server{
+		Addr:    config.runAddr,
+		Handler: router,
+		BaseContext: func(l net.Listener) context.Context {
+			return ctx
+		},
 	}
+
+	logger.Log.Info("Server has been started", zap.String("addr", config.runAddr))
+	go func() {
+		logger.Log.Info("Starting http server", zap.String("addr", config.runAddr))
+		err := srv.ListenAndServe()
+		if err != nil && err != http.ErrServerClosed {
+			logger.Log.Fatal("couldn't start server", zap.Error(err))
+		}
+	}()
+
+	sig := <-signals
+	logger.Log.Info("shutting down", zap.String("signal", sig.String()))
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer shutdownCancel()
+	srv.Shutdown(shutdownCtx)
+	// Я понимаю, что обработка запросов может не завершиться, так как Shutdown -- не блокирующая
+	// Но по курсу gracefull shutdown проходится позже, посмотрю, как там делать нормально его и переделаю
+	// На данный момент урок тот не открыт
+	service.Close()
 }

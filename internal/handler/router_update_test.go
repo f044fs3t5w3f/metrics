@@ -6,7 +6,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/f044fs3t5w3f/metrics/internal/audit"
 	"github.com/f044fs3t5w3f/metrics/internal/repository/memory"
+	"github.com/f044fs3t5w3f/metrics/internal/service"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -117,7 +119,8 @@ func TestRouter(t *testing.T) {
 	}
 
 	storage := memory.NewMemStorage()
-	router := GetRouter(storage, "")
+	service := service.NewService(storage, audit.Dummy{})
+	router := GetRouter(storage, service, "")
 	ts := httptest.NewServer(router)
 	defer ts.Close()
 	for _, test := range tests {
@@ -169,7 +172,8 @@ func TestSequense(t *testing.T) {
 	}
 
 	storage := memory.NewMemStorage()
-	router := GetRouter(storage, "")
+	service := service.NewService(storage, audit.Dummy{})
+	router := GetRouter(storage, service, "")
 	ts := httptest.NewServer(router)
 	defer ts.Close()
 

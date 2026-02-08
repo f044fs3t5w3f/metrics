@@ -13,6 +13,8 @@ type config struct {
 	storeInterval   int64
 	databaseParams  string
 	key             string
+	auditURL        string
+	auditFile       string
 }
 
 func envOrString(env string, fallback string) string {
@@ -46,6 +48,8 @@ func getConfig() (*config, error) {
 	dbFlag := flag.String("d", "", "database dsn")
 	intervalFlag := flag.Int64("i", 300, "store interval")
 	restoreFlag := flag.Bool("r", false, "restore on startup")
+	auditFile := flag.String("audit-file", "", "audit file")
+	auditURL := flag.String("audit-url", "", "audit url")
 
 	flag.Parse()
 
@@ -53,6 +57,8 @@ func getConfig() (*config, error) {
 	config.fileStoragePath = envOrString("FILE_STORAGE_PATH", *fileFlag)
 	config.databaseParams = envOrString("DATABASE_DSN", *dbFlag)
 	config.key = envOrString("KEY", *keyFlag)
+	config.auditFile = envOrString("AUDIT_FILE", *auditFile)
+	config.auditURL = envOrString("AUDIT_URL", *auditURL)
 
 	interval, err := envOrInt64("STORE_INTERVAL", *intervalFlag)
 	if err != nil {

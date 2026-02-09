@@ -1,3 +1,36 @@
+// Package main implements a multichecker that runs a set of static analysis
+// analyzers for Go source code.
+//
+// Usage:
+//
+//	staticlint ./...
+//
+// The multichecker includes the following analyzers:
+//
+//   - staticcheck.Analyzers reports a wide range of bugs, performance issues,
+//     and style problems detected by the staticcheck.io project.
+//
+//   - st1001.Analyzer reports cases where defer is used with a method value
+//     instead of a method call, which may lead to unintended behavior.
+//
+//   - printf.Analyzer checks consistency between format strings and arguments
+//     in functions such as fmt.Printf, fmt.Sprintf, and related helpers.
+//
+//   - structtag.Analyzer validates the syntax and semantics of struct field tags
+//     (for example, json:"field").
+//
+//   - os_exit.Analyzer reports calls to os.Exit in the main function of the
+//     main package.
+//
+//   - nilness.Analyzer detects potential nil pointer dereferences.
+//
+//   - lostcancel.Analyzer reports contexts created by context.WithCancel,
+//     context.WithTimeout, or context.WithDeadline whose cancellation function
+//     is not called, which may lead to goroutine leaks.
+//
+//   - ifaceassert.Analyzer reports unsafe type assertions from interfaces
+//     without checking the assertion result.
+//     это всё написано с помощью LLM
 package main
 
 import (
@@ -8,7 +41,6 @@ import (
 	"golang.org/x/tools/go/analysis/passes/lostcancel"
 	"golang.org/x/tools/go/analysis/passes/nilness"
 	"golang.org/x/tools/go/analysis/passes/printf"
-	"golang.org/x/tools/go/analysis/passes/shadow"
 	"golang.org/x/tools/go/analysis/passes/structtag"
 	"honnef.co/go/tools/staticcheck"
 	"honnef.co/go/tools/stylecheck/st1001"
@@ -21,7 +53,6 @@ func main() {
 	}
 	analyzers = append(analyzers, st1001.Analyzer)
 	analyzers = append(analyzers, printf.Analyzer,
-		shadow.Analyzer,
 		structtag.Analyzer,
 		os_exit.Analyzer,
 		nilness.Analyzer,

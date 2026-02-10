@@ -30,10 +30,14 @@
 //
 //   - ifaceassert.Analyzer reports unsafe type assertions from interfaces
 //     without checking the assertion result.
-//     это всё написано с помощью LLM
+//     это всё написано с помощью LLM ^
+//
+//   - restrictpkg.RestrictPackageAnalyzer restrict using of certain packages.
+//     in this checker it preset for restict reflect package
 package main
 
 import (
+	"github.com/cybozu-go/golang-custom-analyzer/pkg/restrictpkg"
 	"github.com/f044fs3t5w3f/metrics/pkg/analyzers/osexit"
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/multichecker"
@@ -52,12 +56,15 @@ func main() {
 		analyzers = append(analyzers, analyzer.Analyzer)
 	}
 	analyzers = append(analyzers, st1001.Analyzer)
+	f := restrictpkg.RestrictPackageAnalyzer.Flags.Lookup("packages")
+	f.Value.Set("reflect")
 	analyzers = append(analyzers, printf.Analyzer,
 		structtag.Analyzer,
 		osexit.Analyzer,
 		nilness.Analyzer,
 		lostcancel.Analyzer,
 		ifaceassert.Analyzer,
+		restrictpkg.RestrictPackageAnalyzer,
 	)
 
 	multichecker.Main(analyzers...)

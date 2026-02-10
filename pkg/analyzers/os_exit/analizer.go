@@ -1,4 +1,4 @@
-package os_exit
+package osExit
 
 import (
 	"go/ast"

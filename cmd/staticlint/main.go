@@ -34,7 +34,7 @@
 package main
 
 import (
-	"github.com/f044fs3t5w3f/metrics/pkg/analyzers/os_exit"
+	"github.com/f044fs3t5w3f/metrics/pkg/analyzers/osexit"
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/multichecker"
 	"golang.org/x/tools/go/analysis/passes/ifaceassert"
@@ -54,7 +54,7 @@ func main() {
 	analyzers = append(analyzers, st1001.Analyzer)
 	analyzers = append(analyzers, printf.Analyzer,
 		structtag.Analyzer,
-		os_exit.Analyzer,
+		osexit.Analyzer,
 		nilness.Analyzer,
 		lostcancel.Analyzer,
 		ifaceassert.Analyzer,

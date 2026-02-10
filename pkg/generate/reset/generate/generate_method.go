@@ -34,48 +34,6 @@ func generateResetMethodBody(structType *ast.StructType) string {
 	return strings.Join(funcBodySlice, "\n")
 }
 
-func generateFieldReset(rcvr, fieldName string, fieldType ast.Expr) string {
-	switch t := fieldType.(type) {
-	case *ast.Ident:
-		defaultValue, isBasic := getDefautValue(t.Name)
-		if isBasic {
-			return fmt.Sprintf("%s.%s = %s", rcvr, fieldName, defaultValue)
-		} else {
-			return fmt.Sprintf("// %s TODO", fieldName)
-			// typ := types.Info{}[]
-			// fmt.Println(hasResetMethod(fieldType))
-		}
-	case *ast.StarExpr:
-		newRcvr := "*" + rcvr
-		fieldReset := generateFieldReset(newRcvr, fieldName, t.X)
-		return fmt.Sprintf(`if %s.%s != nil {
-			%s
-			}`, rcvr, fieldName, fieldReset)
-
-	case *ast.ArrayType:
-		return fmt.Sprintf("%s.%s = (%s.%s)[:0]", rcvr, fieldName, rcvr, fieldName)
-	case *ast.MapType:
-		return fmt.Sprintf("clear(%s.%s)", rcvr, fieldName)
-	default:
-		return fmt.Sprintf("// type of %s doesn't support ", fieldName)
-	}
-}
-
-func getDefautValue(typeName string) (string, bool) {
-	for _, numberType := range numberTypes {
-		if strings.Contains(typeName, numberType) || strings.Contains(typeName, "int") {
-			return "0", true
-		}
-	}
-	if typeName == "bool" {
-		return "false", true
-	}
-	if typeName == "string" {
-		return `""`, true
-	}
-	return `""`, false
-}
-
 // type notResetable struct{}
 // type resetable struct {
 // }

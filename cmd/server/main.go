@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"database/sql"
+	"fmt"
+	"io"
 	"log"
 	"net"
 	"net/http"
@@ -26,7 +28,24 @@ import (
 
 var retryPolicy []time.Duration = []time.Duration{1 * time.Second, 3 * time.Second, 5 * time.Second}
 
+var (
+	buildVersion, buildDate, buildCommit string
+)
+
+func printBuildInfo(w io.Writer) {
+	v := func(val string) string {
+		if val != "" {
+			return val
+		}
+		return "N/A"
+	}
+	fmt.Fprintf(w, "Build version: %s\n", v(buildVersion))
+	fmt.Fprintf(w, "Build date: %s\n", v(buildDate))
+	fmt.Fprintf(w, "Build commit: %s\n", v(buildCommit))
+}
+
 func main() {
+	printBuildInfo(os.Stdout)
 	config, err := getConfig()
 	if err != nil {
 		log.Fatalf("Config init: %s", err.Error())

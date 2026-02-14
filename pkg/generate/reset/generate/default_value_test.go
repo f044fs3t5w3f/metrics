@@ -8,7 +8,7 @@ type testCase struct {
 	wantOk           bool
 }
 
-func TestGetDefautValue(t *testing.T) {
+func TestGetDefaultValueValue(t *testing.T) {
 	tests := []testCase{
 		{typeName: "int", wantDefaultValue: "0", wantOk: true},
 		{typeName: "int64", wantDefaultValue: "0", wantOk: true},
@@ -21,15 +21,15 @@ func TestGetDefautValue(t *testing.T) {
 
 	for _, testCase := range tests {
 		t.Run(testCase.typeName, func(t *testing.T) {
-			gotValue, gotOk := getDefautValue(testCase.typeName)
+			gotValue, gotOk := getDefaultValue(testCase.typeName)
 
 			if gotValue != testCase.wantDefaultValue {
-				t.Errorf("getDefautValue(%q) value = %q, want %q",
+				t.Errorf("getDefaultValue(%q) value = %q, want %q",
 					testCase.typeName, gotValue, testCase.wantDefaultValue)
 			}
 
 			if gotOk != testCase.wantOk {
-				t.Errorf("getDefautValue(%q) ok = %v, want %v",
+				t.Errorf("getDefaultValue(%q) ok = %v, want %v",
 					testCase.typeName, gotOk, testCase.wantOk)
 			}
 		})

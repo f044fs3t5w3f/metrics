@@ -8,7 +8,7 @@ import (
 func generateFieldReset(rcvr, fieldName string, fieldType ast.Expr) string {
 	switch t := fieldType.(type) {
 	case *ast.Ident:
-		defaultValue, isBasic := getDefautValue(t.Name)
+		defaultValue, isBasic := getDefaultValue(t.Name)
 		if isBasic {
 			return fmt.Sprintf("%s.%s = %s", rcvr, fieldName, defaultValue)
 		} else {

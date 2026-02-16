@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-	"io"
 	"log"
 	"os"
 	"sync"
@@ -10,26 +8,15 @@ import (
 
 	"github.com/f044fs3t5w3f/metrics/internal/agent"
 	"github.com/f044fs3t5w3f/metrics/internal/logger"
+	"github.com/f044fs3t5w3f/metrics/internal/utils"
 )
 
 var (
 	buildVersion, buildDate, buildCommit string
 )
 
-func printBuildInfo(w io.Writer) {
-	v := func(val string) string {
-		if val != "" {
-			return val
-		}
-		return "N/A"
-	}
-	fmt.Fprintf(w, "Build version: %s\n", v(buildVersion))
-	fmt.Fprintf(w, "Build date: %s\n", v(buildDate))
-	fmt.Fprintf(w, "Build commit: %s\n", v(buildCommit))
-}
-
 func main() {
-	printBuildInfo(os.Stdout)
+	utils.PrintBuildInfo(os.Stdout, buildVersion, buildDate, buildCommit)
 	parseFlags()
 	parseEnv()
 

@@ -3,8 +3,6 @@ package main
 import (
 	"context"
 	"database/sql"
-	"fmt"
-	"io"
 	"log"
 	"net"
 	"net/http"
@@ -20,6 +18,7 @@ import (
 	dbRepo "github.com/f044fs3t5w3f/metrics/internal/repository/db"
 	"github.com/f044fs3t5w3f/metrics/internal/repository/file"
 	"github.com/f044fs3t5w3f/metrics/internal/service"
+	"github.com/f044fs3t5w3f/metrics/internal/utils"
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"go.uber.org/zap"
@@ -32,20 +31,8 @@ var (
 	buildVersion, buildDate, buildCommit string
 )
 
-func printBuildInfo(w io.Writer) {
-	v := func(val string) string {
-		if val != "" {
-			return val
-		}
-		return "N/A"
-	}
-	fmt.Fprintf(w, "Build version: %s\n", v(buildVersion))
-	fmt.Fprintf(w, "Build date: %s\n", v(buildDate))
-	fmt.Fprintf(w, "Build commit: %s\n", v(buildCommit))
-}
-
 func main() {
-	printBuildInfo(os.Stdout)
+	utils.PrintBuildInfo(os.Stdout, buildVersion, buildDate, buildCommit)
 	config, err := getConfig()
 	if err != nil {
 		log.Fatalf("Config init: %s", err.Error())

@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"crypto/rsa"
 	"fmt"
 	"time"
 
@@ -10,7 +11,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func ReportBatch(host string, batch MetricsBatch, key string) {
+func ReportBatch(host string, batch MetricsBatch, key string, publicKey *rsa.PublicKey) {
 	url := fmt.Sprintf("http://%s/updates/", host)
 	logger.Log.Info("to send metrics")
 
@@ -20,8 +21,9 @@ func ReportBatch(host string, batch MetricsBatch, key string) {
 
 	// Маршалинг с очень маленькой вероятностью может дать ошибку в продакшене, поэтому нет ничего страшного,
 	// что потенциально мы можем и эту ошибку ретраить, что казалось бы бесполезно и безнадёжно.
+
 	err := retry.Retry(func() error {
-		return net.SendZippedSignedJSON(url, batch, key)
+		return net.SendZippedSignedJSON(url, batch, key, publicKey)
 	}, []time.Duration{1 * time.Second, 3 * time.Second, 5 * time.Second}, logError)
 	if err != nil {
 		logger.Log.Error(err.Error())

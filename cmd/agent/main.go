@@ -1,71 +1,44 @@
 package main
 
 import (
-	"fmt"
-	"io"
+	"crypto/rsa"
 	"log"
 	"os"
 	"sync"
 	"time"
 
 	"github.com/f044fs3t5w3f/metrics/internal/agent"
+	cfg "github.com/f044fs3t5w3f/metrics/internal/agent/config"
 	"github.com/f044fs3t5w3f/metrics/internal/logger"
+	"github.com/f044fs3t5w3f/metrics/internal/utils"
 )
 
 var (
 	buildVersion, buildDate, buildCommit string
 )
 
-func printBuildInfo(w io.Writer) {
-	v := func(val string) string {
-		if val != "" {
-			return val
-		}
-		return "N/A"
-	}
-	fmt.Fprintf(w, "Build version: %s\n", v(buildVersion))
-	fmt.Fprintf(w, "Build date: %s\n", v(buildDate))
-	fmt.Fprintf(w, "Build commit: %s\n", v(buildCommit))
-}
-
 func main() {
-	printBuildInfo(os.Stdout)
-	parseFlags()
-	parseEnv()
+	utils.PrintBuildInfo(os.Stdout, buildVersion, buildDate, buildCommit)
 
-	pollInterval := envPollInterval
-	if pollInterval == 0 {
-		pollInterval = flagPollInterval
+	config, err := cfg.GetConfig()
+	if err != nil {
+		log.Fatalf("couldn't get config: %s", err.Error())
 	}
 
-	key := envKey
-	if key == "" {
-		key = flagKey
-	}
-
-	reportInterval := envReportInterval
-	if reportInterval == 0 {
-		reportInterval = flagReportInterval
-	}
-
-	addr := envRunAddr
-	if addr == "" {
-		addr = flagEndpointAddr
-	}
-
-	rateLimit := envRateLimit
-	if envRateLimit == 0 {
-		rateLimit = flagRateLimit
-	}
 	var pool chan struct{}
-	if rateLimit > 0 {
-		pool = make(chan struct{}, rateLimit)
+	if config.RateLimit > 0 {
+		pool = make(chan struct{}, config.RateLimit)
+	}
+
+	var publicKey *rsa.PublicKey = nil
+	if config.CryptoKeyPath != "" {
+
 	}
 
 	lock := sync.Mutex{}
 	var counter int64 = 0
 	store := make([]agent.MetricsBatch, 0)
-	err := logger.Initialize("INFO")
+	err = logger.Initialize("INFO")
 	if err != nil {
 		log.Fatalf("couldn't initialize logger: %s", err.Error())
 	}
@@ -85,10 +58,10 @@ func main() {
 						<-pool
 					}()
 				}
-				agent.ReportBatch(addr, lastBatch, key)
+				agent.ReportBatch(config.RunAddr, lastBatch, config.Key, publicKey)
 			}()
 
-			time.Sleep(time.Duration(reportInterval) * time.Second)
+			time.Sleep(time.Duration(config.ReportInterval) * time.Second)
 		}
 	}()
 	for {
@@ -97,6 +70,6 @@ func main() {
 		lock.Lock()
 		store = append(store, batch)
 		lock.Unlock()
-		time.Sleep(time.Duration(pollInterval) * time.Second)
+		time.Sleep(time.Duration(config.PollInterval) * time.Second)
 	}
 }

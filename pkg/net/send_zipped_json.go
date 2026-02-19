@@ -5,6 +5,7 @@ package net
 import (
 	"bytes"
 	"compress/gzip"
+	"crypto/rsa"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -21,7 +22,7 @@ import (
 // data - any jsonable object
 //
 // key - secret key for signature
-func SendZippedSignedJSON(url string, data any, key string) error {
+func SendZippedSignedJSON(url string, data any, key string, publicKey *rsa.PublicKey) error {
 	body, err := getRequestBody(data)
 	if err != nil {
 		return fmt.Errorf("getRequestBody: %s", err)
@@ -59,7 +60,7 @@ func SendZippedSignedJSON(url string, data any, key string) error {
 //
 // data - any jsonable object
 func SendZippedJSON(url string, data any) error {
-	return SendZippedSignedJSON(url, data, "")
+	return SendZippedSignedJSON(url, data, "", nil)
 }
 
 func getRequestBody(data any) (io.Reader, error) {

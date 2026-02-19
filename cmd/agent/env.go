@@ -11,10 +11,13 @@ var (
 	envPollInterval   int64
 	envKey            string
 	envRateLimit      int64
+	envCryptoKeyPath  string
 )
 
 func parseEnv() {
 	envRunAddr = os.Getenv("ADDRESS")
+	envKey = os.Getenv("KEY")
+	envCryptoKeyPath = os.Getenv("CRYPTO_KEY")
 
 	var err error
 	envReportIntervalStr := os.Getenv("REPORT_INTERVAL")
@@ -41,5 +44,4 @@ func parseEnv() {
 		}
 	}
 
-	envKey = os.Getenv("KEY")
 }

@@ -2,8 +2,8 @@ package main
 
 import (
 	"flag"
-	"os"
-	"strconv"
+
+	"github.com/f044fs3t5w3f/metrics/pkg/configuration"
 )
 
 type config struct {
@@ -15,28 +15,7 @@ type config struct {
 	key             string
 	auditURL        string
 	auditFile       string
-}
-
-func envOrString(env string, fallback string) string {
-	if v := os.Getenv(env); v != "" {
-		return v
-	}
-	return fallback
-}
-
-func envOrBool(env string, fallback bool) (bool, error) {
-	if v := os.Getenv(env); v != "" {
-		parsed, err := strconv.ParseBool(v)
-		return parsed, err
-	}
-	return fallback, nil
-}
-
-func envOrInt64(env string, fallback int64) (int64, error) {
-	if v := os.Getenv(env); v != "" {
-		return strconv.ParseInt(v, 10, 64)
-	}
-	return fallback, nil
+	cryptoFile      string
 }
 
 func getConfig() (*config, error) {
@@ -50,23 +29,25 @@ func getConfig() (*config, error) {
 	restoreFlag := flag.Bool("r", false, "restore on startup")
 	auditFile := flag.String("audit-file", "", "audit file")
 	auditURL := flag.String("audit-url", "", "audit url")
+	cryptoFile := flag.String("crypto-key", "", "private key")
 
 	flag.Parse()
 
-	config.runAddr = envOrString("ADDRESS", *addrFlag)
-	config.fileStoragePath = envOrString("FILE_STORAGE_PATH", *fileFlag)
-	config.databaseParams = envOrString("DATABASE_DSN", *dbFlag)
-	config.key = envOrString("KEY", *keyFlag)
-	config.auditFile = envOrString("AUDIT_FILE", *auditFile)
-	config.auditURL = envOrString("AUDIT_URL", *auditURL)
+	config.runAddr = configuration.EnvOrString("ADDRESS", *addrFlag)
+	config.fileStoragePath = configuration.EnvOrString("FILE_STORAGE_PATH", *fileFlag)
+	config.databaseParams = configuration.EnvOrString("DATABASE_DSN", *dbFlag)
+	config.key = configuration.EnvOrString("KEY", *keyFlag)
+	config.auditFile = configuration.EnvOrString("AUDIT_FILE", *auditFile)
+	config.auditURL = configuration.EnvOrString("AUDIT_URL", *auditURL)
+	config.cryptoFile = configuration.EnvOrString("CRYPTO_KEY", *cryptoFile)
 
-	interval, err := envOrInt64("STORE_INTERVAL", *intervalFlag)
+	interval, err := configuration.EnvOrInt64("STORE_INTERVAL", *intervalFlag)
 	if err != nil {
 		return nil, err
 	}
 	config.storeInterval = interval
 
-	restore, err := envOrBool("RESTORE", *restoreFlag)
+	restore, err := configuration.EnvOrBool("RESTORE", *restoreFlag)
 	if err != nil {
 		return nil, err
 	}

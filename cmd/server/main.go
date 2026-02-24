@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/rsa"
 	"database/sql"
 	"log"
 	"net"
@@ -12,6 +13,7 @@ import (
 	"time"
 
 	"github.com/f044fs3t5w3f/metrics/internal/audit"
+	"github.com/f044fs3t5w3f/metrics/internal/crypto"
 	"github.com/f044fs3t5w3f/metrics/internal/handler"
 	"github.com/f044fs3t5w3f/metrics/internal/logger"
 	"github.com/f044fs3t5w3f/metrics/internal/repository"
@@ -82,10 +84,18 @@ func main() {
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, os.Interrupt, syscall.SIGTERM, syscall.SIGTRAP)
 
+	var privateKey *rsa.PrivateKey
+	if config.cryptoFile != "" {
+		privateKey, err = crypto.GetPrivateKey(config.cryptoFile)
+		if err != nil {
+			log.Fatalf("getPrivateKey: %s", err.Error())
+		}
+	}
+
 	service := service.NewService(storage, auditPublisher)
 	service.AddCleanup(fileAuditCleanup)
 
-	router := handler.GetRouter(storage, service, config.key)
+	router := handler.GetRouter(storage, service, config.key, privateKey)
 
 	srv := &http.Server{
 		Addr:    config.runAddr,

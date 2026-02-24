@@ -9,6 +9,7 @@ import (
 
 	"github.com/f044fs3t5w3f/metrics/internal/agent"
 	cfg "github.com/f044fs3t5w3f/metrics/internal/agent/config"
+	"github.com/f044fs3t5w3f/metrics/internal/crypto"
 	"github.com/f044fs3t5w3f/metrics/internal/logger"
 	"github.com/f044fs3t5w3f/metrics/internal/utils"
 )
@@ -32,7 +33,10 @@ func main() {
 
 	var publicKey *rsa.PublicKey = nil
 	if config.CryptoKeyPath != "" {
-
+		publicKey, err = crypto.GetPublicKey(config.CryptoKeyPath)
+		if err != nil {
+			log.Fatalf("getPublicKey: %s", err.Error())
+		}
 	}
 
 	lock := sync.Mutex{}

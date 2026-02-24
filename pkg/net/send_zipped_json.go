@@ -12,6 +12,7 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/f044fs3t5w3f/metrics/internal/crypto"
 	"github.com/f044fs3t5w3f/metrics/pkg/sign"
 )
 
@@ -25,7 +26,7 @@ import (
 func SendZippedSignedJSON(url string, data any, key string, publicKey *rsa.PublicKey) error {
 	body, err := getRequestBody(data)
 	if err != nil {
-		return fmt.Errorf("getRequestBody: %s", err)
+		return fmt.Errorf("getRequestBody: %w", err)
 	}
 	var hash []byte
 	if key != "" {
@@ -34,7 +35,13 @@ func SendZippedSignedJSON(url string, data any, key string, publicKey *rsa.Publi
 		hash = signFunc(data)
 		body = bytes.NewReader(data)
 	}
+	if publicKey != nil {
+		body, err = crypto.Encrypt(body, publicKey)
 
+		if err != nil {
+			return fmt.Errorf("crypto.Encrypt: %w", err)
+		}
+	}
 	req, err := http.NewRequest(http.MethodPost, url, body)
 	if err != nil {
 		return fmt.Errorf("creating request error: %s", err)

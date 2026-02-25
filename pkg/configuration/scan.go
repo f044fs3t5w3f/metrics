@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-var ErrNotSupportedType = errors.New("Not supported type")
+var ErrNotSupportedType = errors.New("not supported type")
 
 func ScanConfig(ptr any, args []string) error {
 	if args == nil {

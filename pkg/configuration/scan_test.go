@@ -5,16 +5,18 @@ import (
 	"path/filepath"
 	"runtime"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 type testConfig struct {
-	StringField string `env:"STRING_FIELD" flag:"s" jsonConfig:"string_field" default:"default_value"`
-	IntField    int    `env:"INT_FIELD" jsonConfig:"int_field" default:"50"`
-	Int64Field  int64  `env:"INT64_FIELD" jsonConfig:"int64_field" default:"100"`
-	BoolField   bool   `env:"BOOL_FIELD" jsonConfig:"bool_field"`
+	StringField string        `env:"STRING_FIELD" flag:"s" jsonConfig:"string_field" default:"default_value"`
+	IntField    int           `env:"INT_FIELD" jsonConfig:"int_field" default:"50"`
+	Int64Field  int64         `env:"INT64_FIELD" jsonConfig:"int64_field" default:"100"`
+	BoolField   bool          `env:"BOOL_FIELD" jsonConfig:"bool_field"`
+	Duration    time.Duration `env:"DURATION_FIELD" default:"3s"`
 	private     string
 }
 
@@ -123,4 +125,13 @@ func TestScanConfig_boolFalse(t *testing.T) {
 	err := ScanConfig(&config, []string{})
 	assert.NoError(t, err)
 	assert.Equal(t, false, config.BoolField)
+}
+
+func TestScanConfig_duration(t *testing.T) {
+	var config testConfig
+	os.Setenv("DURATION_FIELD", "1s")
+	defer os.Unsetenv("DURATION_FIELD")
+	err := ScanConfig(&config, []string{})
+	assert.NoError(t, err)
+	assert.Equal(t, 1*time.Second, config.Duration)
 }

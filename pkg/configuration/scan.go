@@ -7,6 +7,7 @@ import (
 	"os"
 	"reflect"
 	"strconv"
+	"time"
 )
 
 var ErrNotSupportedType = errors.New("Not supported type")
@@ -72,12 +73,24 @@ func ScanConfig(ptr any, args []string) error {
 		case reflect.String:
 			v.FieldByIndex(field.Index).Set(reflect.ValueOf(value))
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-			parsedValue, err := strconv.ParseInt(value, 10, 64)
-			if err != nil {
-				return fmt.Errorf("cannot set field %s. Value %s. %w ", field.Name, value, err)
+			if field.Type == reflect.TypeOf(time.Duration(0)) {
+				parsedValue := time.Duration(0)
+				if value != "" {
+					parsedValue, err = time.ParseDuration(value)
+					if err != nil {
+						return fmt.Errorf("cannot set field %s. Value %s. %w ", field.Name, value, err)
+					}
+				}
+
+				v.FieldByIndex(field.Index).Set(reflect.ValueOf(parsedValue))
+			} else {
+				parsedValue, err := strconv.ParseInt(value, 10, 64)
+				if err != nil {
+					return fmt.Errorf("cannot set field %s. Value %s. %w ", field.Name, value, err)
+				}
+				fieldType := field.Type
+				v.FieldByIndex(field.Index).Set(reflect.ValueOf(parsedValue).Convert(fieldType))
 			}
-			fieldType := field.Type
-			v.FieldByIndex(field.Index).Set(reflect.ValueOf(parsedValue).Convert(fieldType))
 		case reflect.Bool:
 			parsedValue := false
 			if value != "" {

@@ -84,7 +84,7 @@ func main() {
 		}
 	}
 	signals := make(chan os.Signal, 1)
-	signal.Notify(signals, os.Interrupt, syscall.SIGTERM, syscall.SIGTRAP)
+	signal.Notify(signals, os.Interrupt, syscall.SIGTERM, syscall.SIGTRAP, syscall.SIGQUIT, syscall.SIGQUIT)
 
 	var privateKey *rsa.PrivateKey
 	if config.CryptoFile != "" {
@@ -121,8 +121,5 @@ func main() {
 	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer shutdownCancel()
 	srv.Shutdown(shutdownCtx)
-	// Я понимаю, что обработка запросов может не завершиться, так как Shutdown -- не блокирующая
-	// Но по курсу gracefull shutdown проходится позже, посмотрю, как там делать нормально его и переделаю
-	// На данный момент урок тот не открыт
 	service.Close()
 }

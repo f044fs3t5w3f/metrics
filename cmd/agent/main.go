@@ -4,7 +4,9 @@ import (
 	"crypto/rsa"
 	"log"
 	"os"
+	"os/signal"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/f044fs3t5w3f/metrics/internal/agent"
@@ -70,12 +72,18 @@ func main() {
 			time.Sleep(time.Duration(config.ReportInterval) * time.Second)
 		}
 	}()
-	for {
-		batch := agent.GetMetricsBatch(counter)
-		counter += 1
-		lock.Lock()
-		store = append(store, batch)
-		lock.Unlock()
-		time.Sleep(time.Duration(config.PollInterval) * time.Second)
-	}
+	go func() {
+		for {
+			batch := agent.GetMetricsBatch(counter)
+			counter += 1
+			lock.Lock()
+			store = append(store, batch)
+			lock.Unlock()
+			time.Sleep(time.Duration(config.PollInterval) * time.Second)
+		}
+	}()
+	signals := make(chan os.Signal, 1)
+	signal.Notify(signals, os.Interrupt, syscall.SIGTERM, syscall.SIGTRAP, syscall.SIGQUIT, syscall.SIGQUIT)
+	<-signals
+	lock.Lock()
 }

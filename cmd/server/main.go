@@ -21,6 +21,7 @@ import (
 	"github.com/f044fs3t5w3f/metrics/internal/repository/file"
 	"github.com/f044fs3t5w3f/metrics/internal/service"
 	"github.com/f044fs3t5w3f/metrics/internal/utils"
+	"github.com/f044fs3t5w3f/metrics/pkg/configuration"
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"go.uber.org/zap"
@@ -35,7 +36,8 @@ var (
 
 func main() {
 	utils.PrintBuildInfo(os.Stdout, buildVersion, buildDate, buildCommit)
-	config, err := getConfig()
+	config := Config{}
+	err := configuration.ScanConfig(&config, nil)
 	if err != nil {
 		log.Fatalf("Config init: %s", err.Error())
 	}
@@ -49,8 +51,8 @@ func main() {
 
 	var storage repository.Storage
 
-	if config.databaseParams != "" {
-		db, err := sql.Open("pgx", config.databaseParams)
+	if config.DatabaseDSN != "" {
+		db, err := sql.Open("pgx", config.DatabaseDSN)
 		if err != nil {
 			logger.Log.Fatal("couldn't connect to database", zap.Error(err))
 		}
@@ -64,29 +66,29 @@ func main() {
 		storage = dbRepo.NewDBStorage(db, retryPolicy)
 	}
 	if storage == nil {
-		storage = file.NewFileStorage(config.fileStoragePath, config.storeInterval, config.restore)
+		storage = file.NewFileStorage(config.FileStorage, config.StoreInterval, config.RestoreOnBoot)
 	}
 
 	auditPublisher := audit.NewAuditPublisher(nil)
-	if config.auditURL != "" {
-		auditPublisher.AddSubscriber(audit.NewRemoteAudit(config.auditURL))
+	if config.AuditFile != "" {
+		auditPublisher.AddSubscriber(audit.NewRemoteAudit(config.AuditFile))
 	}
 	var fileAuditCleanup func()
-	if config.auditFile != "" {
-		fileAudit, err := audit.NewFileAudit(ctx, config.auditFile)
+	if config.AuditFile != "" {
+		fileAudit, err := audit.NewFileAudit(ctx, config.AuditFile)
 		fileAuditCleanup = fileAudit.Close
 		if err == nil {
 			auditPublisher.AddSubscriber(fileAudit)
 		} else {
-			logger.Log.Info("audit: cannot open file", zap.String("file", config.auditFile))
+			logger.Log.Info("audit: cannot open file", zap.String("file", config.AuditFile))
 		}
 	}
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, os.Interrupt, syscall.SIGTERM, syscall.SIGTRAP)
 
 	var privateKey *rsa.PrivateKey
-	if config.cryptoFile != "" {
-		privateKey, err = crypto.GetPrivateKey(config.cryptoFile)
+	if config.CryptoFile != "" {
+		privateKey, err = crypto.GetPrivateKey(config.CryptoFile)
 		if err != nil {
 			log.Fatalf("getPrivateKey: %s", err.Error())
 		}
@@ -95,19 +97,19 @@ func main() {
 	service := service.NewService(storage, auditPublisher)
 	service.AddCleanup(fileAuditCleanup)
 
-	router := handler.GetRouter(storage, service, config.key, privateKey)
+	router := handler.GetRouter(storage, service, config.Key, privateKey)
 
 	srv := &http.Server{
-		Addr:    config.runAddr,
+		Addr:    config.RunAddr,
 		Handler: router,
 		BaseContext: func(l net.Listener) context.Context {
 			return ctx
 		},
 	}
 
-	logger.Log.Info("Server has been started", zap.String("addr", config.runAddr))
+	logger.Log.Info("Server has been started", zap.String("addr", config.RunAddr))
 	go func() {
-		logger.Log.Info("Starting http server", zap.String("addr", config.runAddr))
+		logger.Log.Info("Starting http server", zap.String("addr", config.RunAddr))
 		err := srv.ListenAndServe()
 		if err != nil && err != http.ErrServerClosed {
 			logger.Log.Fatal("couldn't start server", zap.Error(err))

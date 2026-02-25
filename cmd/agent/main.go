@@ -8,10 +8,10 @@ import (
 	"time"
 
 	"github.com/f044fs3t5w3f/metrics/internal/agent"
-	cfg "github.com/f044fs3t5w3f/metrics/internal/agent/config"
 	"github.com/f044fs3t5w3f/metrics/internal/crypto"
 	"github.com/f044fs3t5w3f/metrics/internal/logger"
 	"github.com/f044fs3t5w3f/metrics/internal/utils"
+	"github.com/f044fs3t5w3f/metrics/pkg/configuration"
 )
 
 var (
@@ -21,7 +21,9 @@ var (
 func main() {
 	utils.PrintBuildInfo(os.Stdout, buildVersion, buildDate, buildCommit)
 
-	config, err := cfg.GetConfig()
+	config := Config{}
+	err := configuration.ScanConfig(&config, nil)
+
 	if err != nil {
 		log.Fatalf("couldn't get config: %s", err.Error())
 	}
@@ -62,7 +64,7 @@ func main() {
 						<-pool
 					}()
 				}
-				agent.ReportBatch(config.RunAddr, lastBatch, config.Key, publicKey)
+				agent.ReportBatch(config.Address, lastBatch, config.Key, publicKey)
 			}()
 
 			time.Sleep(time.Duration(config.ReportInterval) * time.Second)

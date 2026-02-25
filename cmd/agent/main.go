@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -22,6 +23,9 @@ var (
 
 func main() {
 	utils.PrintBuildInfo(os.Stdout, buildVersion, buildDate, buildCommit)
+
+	canGoOn := atomic.Bool{}
+	canGoOn.Store(true)
 
 	config := Config{}
 	err := configuration.ScanConfig(&config, nil)
@@ -52,6 +56,9 @@ func main() {
 	}
 	go func() {
 		for {
+			if !canGoOn.Load() {
+				return
+			}
 			lock.Lock()
 			if len(store) == 0 {
 				lock.Unlock()
@@ -74,6 +81,9 @@ func main() {
 	}()
 	go func() {
 		for {
+			if !canGoOn.Load() {
+				return
+			}
 			batch := agent.GetMetricsBatch(counter)
 			counter += 1
 			lock.Lock()
@@ -85,5 +95,7 @@ func main() {
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, os.Interrupt, syscall.SIGTERM, syscall.SIGTRAP, syscall.SIGQUIT, syscall.SIGQUIT)
 	<-signals
+	canGoOn.Store(false)
 	lock.Lock()
+
 }

@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-func loadJsonConfig(configPath string) (map[string]*string, error) {
+func loadJSONConfig(configPath string) (map[string]*string, error) {
 	jsonConfig := make(map[string]*string)
 	if configPath == "" {
 		return jsonConfig, nil

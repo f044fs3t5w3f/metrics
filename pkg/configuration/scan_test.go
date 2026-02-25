@@ -49,23 +49,13 @@ func TestScanConfig_default(t *testing.T) {
 
 func TestScanConfig_jsonConfig(t *testing.T) {
 	var config testConfig
-	os.Setenv("CONFIG", getTestJsonFilePath())
+	os.Setenv("CONFIG", getTestJSONFilePath())
 	defer os.Unsetenv("CONFIG")
 
 	err := ScanConfig(&config, []string{})
 	require.NoError(t, err)
 
 	assert.Equal(t, "json_value", config.StringField)
-}
-
-func getTestJsonFilePath() string {
-	_, filename, _, ok := runtime.Caller(0)
-	if !ok {
-		panic("Failed to retrieve caller information")
-	}
-
-	dir := filepath.Dir(filename)
-	return filepath.Join(dir, "./test_config.json")
 }
 
 func TestScanConfig_EnvFlagPriority(t *testing.T) {
@@ -82,7 +72,7 @@ func TestScanConfig_EnvFlagPriority(t *testing.T) {
 
 func TestScanConfig_FlagConfigPriority(t *testing.T) {
 	var config testConfig
-	os.Setenv("CONFIG", getTestJsonFilePath())
+	os.Setenv("CONFIG", getTestJSONFilePath())
 	defer os.Unsetenv("CONFIG")
 	err := ScanConfig(&config, []string{"-s=value2"})
 	require.NoError(t, err)
@@ -134,4 +124,14 @@ func TestScanConfig_duration(t *testing.T) {
 	err := ScanConfig(&config, []string{})
 	assert.NoError(t, err)
 	assert.Equal(t, 1*time.Second, config.Duration)
+}
+
+func getTestJSONFilePath() string {
+	_, filename, _, ok := runtime.Caller(0)
+	if !ok {
+		panic("Failed to retrieve caller information")
+	}
+
+	dir := filepath.Dir(filename)
+	return filepath.Join(dir, "./test_config.json")
 }

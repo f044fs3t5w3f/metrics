@@ -52,9 +52,9 @@ func ScanConfig(ptr any, args []string) error {
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
-	jsonConfig, err := loadJsonConfig(configPath)
+	jsonConfig, err := loadJSONConfig(configPath)
 	if err != nil {
-		return fmt.Errorf("loadJsonConfig: %w", err)
+		return fmt.Errorf("loadJSONConfig: %w", err)
 	}
 
 	for i := 0; i < t.NumField(); i++ {

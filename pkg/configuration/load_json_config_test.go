@@ -6,9 +6,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestLoadJsonConfig(t *testing.T) {
-	jsonConfig, err := loadJsonConfig(
-		getTestJsonFilePath(),
+func TestLoadJSONConfig(t *testing.T) {
+	jsonConfig, err := loadJSONConfig(
+		getTestJSONFilePath(),
 	)
 	assert.NoError(t, err)
 	assert.NotNil(t, jsonConfig)
@@ -16,7 +16,7 @@ func TestLoadJsonConfig(t *testing.T) {
 	assert.Equal(t, "json_value", *jsonConfig["string_field"])
 }
 func TestLoadJsonConfig_IncorrectFile(t *testing.T) {
-	_, err := loadJsonConfig(
+	_, err := loadJSONConfig(
 		"./incorrect.json",
 	)
 	assert.Error(t, err)

@@ -24,6 +24,7 @@ var (
 func main() {
 	utils.PrintBuildInfo(os.Stdout, buildVersion, buildDate, buildCommit)
 
+	wg := &sync.WaitGroup{}
 	canGoOn := atomic.Bool{}
 	canGoOn.Store(true)
 
@@ -73,7 +74,7 @@ func main() {
 						<-pool
 					}()
 				}
-				agent.ReportBatch(config.Address, lastBatch, config.Key, publicKey)
+				agent.ReportBatch(config.Address, lastBatch, config.Key, publicKey, wg)
 			}()
 
 			time.Sleep(time.Duration(config.ReportInterval) * time.Second)
@@ -96,6 +97,6 @@ func main() {
 	signal.Notify(signals, os.Interrupt, syscall.SIGTERM, syscall.SIGTRAP, syscall.SIGQUIT, syscall.SIGQUIT)
 	<-signals
 	canGoOn.Store(false)
-	lock.Lock()
 
+	wg.Wait()
 }

@@ -41,11 +41,11 @@ func main() {
 
 	dir := "./certs"
 
-	if err = os.WriteFile(filepath.Join(dir, "id_rsa.pub"), publicKeyPEM.Bytes(), 0644); err != nil {
+	if err = os.WriteFile(filepath.Join(dir, "id_rsa.pub"), publicKeyPEM.Bytes(), 0600); err != nil {
 		log.Fatal(err)
 	}
 
-	if err = os.WriteFile(filepath.Join(dir, "id_rsa"), privateKeyPEM.Bytes(), 0644); err != nil {
+	if err = os.WriteFile(filepath.Join(dir, "id_rsa"), privateKeyPEM.Bytes(), 0600); err != nil {
 		log.Fatal(err)
 	}
 }

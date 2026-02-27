@@ -14,6 +14,9 @@ func GetPrivateKey(path string) (*rsa.PrivateKey, error) {
 		return nil, fmt.Errorf("ReadFile: %w", err)
 	}
 	privateKeyPemBlock, _ := pem.Decode(privateKeyBytes)
+	if privateKeyPemBlock == nil {
+		return nil, ErrNoPEMDataWasFound
+	}
 	privateKey, err := x509.ParsePKCS1PrivateKey(privateKeyPemBlock.Bytes)
 	if err != nil {
 		return nil, fmt.Errorf("privateKeyPemBlock: %w", err)

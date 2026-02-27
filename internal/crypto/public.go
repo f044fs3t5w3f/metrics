@@ -14,6 +14,9 @@ func GetPublicKey(path string) (*rsa.PublicKey, error) {
 		return nil, fmt.Errorf("ReadFile: %w", err)
 	}
 	publicKeyPemBlock, _ := pem.Decode(publicKeyBytes)
+	if publicKeyPemBlock == nil {
+		return nil, ErrNoPEMDataWasFound
+	}
 	publicKey, err := x509.ParsePKCS1PublicKey(publicKeyPemBlock.Bytes)
 	if err != nil {
 		return nil, fmt.Errorf("ParsePKCS1PublicKey: %w", err)

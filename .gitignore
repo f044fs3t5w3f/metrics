@@ -36,6 +36,10 @@ env.list
 
 store.json
 
+test_config.json
+
 db.sh
 
 audit.txt
+
+certs

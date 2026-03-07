@@ -1,6 +1,9 @@
 package handler
 
 import (
+	"crypto/rsa"
+
+	"github.com/f044fs3t5w3f/metrics/internal/crypto"
 	"github.com/f044fs3t5w3f/metrics/internal/logger"
 	"github.com/f044fs3t5w3f/metrics/internal/repository"
 	"github.com/f044fs3t5w3f/metrics/internal/service"
@@ -17,10 +20,13 @@ import (
 // - service: service for metrics
 // - key: key for sign middleware
 
-func GetRouter(storage repository.Storage, service *service.Service, key string) *chi.Mux {
+func GetRouter(storage repository.Storage, service *service.Service, key string, privateKey *rsa.PrivateKey) *chi.Mux {
 	// service := service.NewService(storage)
 	r := chi.NewRouter()
 	r.Use(logger.RequestLogger)
+	if privateKey != nil {
+		r.Use(crypto.GetDecryptMiddleware(privateKey))
+	}
 	if key != "" {
 		signMiddleware := sign.GetSignMiddleware(sign.GetSignFunc(key))
 		r.Use(signMiddleware)

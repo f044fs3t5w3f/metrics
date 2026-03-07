@@ -120,7 +120,7 @@ func TestRouter(t *testing.T) {
 
 	storage := memory.NewMemStorage()
 	service := service.NewService(storage, audit.Dummy{})
-	router := GetRouter(storage, service, "")
+	router := GetRouter(storage, service, "", nil)
 	ts := httptest.NewServer(router)
 	defer ts.Close()
 	for _, test := range tests {
@@ -173,7 +173,7 @@ func TestSequense(t *testing.T) {
 
 	storage := memory.NewMemStorage()
 	service := service.NewService(storage, audit.Dummy{})
-	router := GetRouter(storage, service, "")
+	router := GetRouter(storage, service, "", nil)
 	ts := httptest.NewServer(router)
 	defer ts.Close()
 

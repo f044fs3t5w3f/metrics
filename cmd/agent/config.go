@@ -7,4 +7,5 @@ type Config struct {
 	Key            string `env:"KEY" flag:"k" jsonConfig:"key" default:"" description:"key"`
 	CryptoKeyPath  string `env:"CRYPTO_KEY" flag:"crypto-key" jsonConfig:"crypto_key" default:"" description:"public key path"`
 	RateLimit      int64  `env:"RATE_LIMIT" flag:"l" jsonConfig:"rate_limit" default:"0" description:"rate limit"`
+	RPCServer      string `env:"RPC_SERVER" flag:"rpc" jsonConfig:"rpc_server" default:"" description:"rpc server address"`
 }

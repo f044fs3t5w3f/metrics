@@ -31,33 +31,35 @@ var (
 
 type reportBatchFunc func(batch agent.MetricsBatch, wg *sync.WaitGroup)
 
-func reportButchWithRPC(c pb.MetricsClient, batch agent.MetricsBatch) {
+func reportBatchWithRPC(c pb.MetricsClient, batch agent.MetricsBatch) {
 	metrics := make([]*pb.Metric, len(batch))
+
 	for i, metric := range batch {
-		metricBuilder := pb.Metric_builder{
-			Id: metric.ID,
-		}
-		if metric.Delta != nil {
-			metricBuilder.Delta = *metric.Delta
-		}
-		if metric.Value != nil {
-			metricBuilder.Value = *metric.Value
-		}
+		builder := pb.Metric_builder{}
+		builder.Id = metric.ID
+
 		switch metric.MType {
 		case models.Counter:
-			metricBuilder.Type = pb.Metric_COUNTER
+			builder.Type = pb.Metric_COUNTER
+			if metric.Delta != nil {
+				builder.Delta = *metric.Delta
+			}
+
 		case models.Gauge:
-			metricBuilder.Type = pb.Metric_GAUGE
-		default:
-			logger.Log.Error("Incorrect type for grpc", zap.String("type", metric.MType))
-			return
+			builder.Type = pb.Metric_GAUGE
+			if metric.Value != nil {
+				builder.Value = *metric.Value
+			}
 		}
-		metrics[i] = metricBuilder.Build()
+
+		metrics[i] = builder.Build()
 	}
-	request := pb.UpdateMetricsRequest_builder{
-		Metrics: metrics,
-	}.Build()
-	_, err := c.UpdateMetrics(context.Background(), request)
+
+	request := &pb.UpdateMetricsRequest{}
+	request.SetMetrics(metrics)
+
+	resp, err := c.UpdateMetrics(context.Background(), request)
+	fmt.Println(resp)
 	if err != nil {
 		logger.Log.Error("grpc request failed", zap.Error(err))
 	}
@@ -78,7 +80,7 @@ func getReportBatchFunc(config *Config) (reportBatchFunc, func(), error) {
 		}
 		return func(batch agent.MetricsBatch, wg *sync.WaitGroup) {
 			wg.Add(1)
-			reportButchWithRPC(c, batch)
+			reportBatchWithRPC(c, batch)
 			wg.Done()
 		}, closeFunc, nil
 

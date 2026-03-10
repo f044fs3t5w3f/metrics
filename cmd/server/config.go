@@ -11,6 +11,7 @@ type Config struct {
 	StoreInterval int64  `env:"STORE_INTERVAL" flag:"i" jsonConfig:"store_interval" default:"300" description:"Interval in seconds to store metrics"`
 	DatabaseDSN   string `env:"DATABASE_DSN" flag:"d" jsonConfig:"database_dsn" default:"" description:"Database connection string"`
 	TrustedSubnet string `env:"TRUSTED_SUBNET" flag:"t" jsonConfig:"trusted_subnet" default:""`
+	RPCServer     string `env:"RPC_SERVER" flag:"rpc" jsonConfig:"rpc_server" default:"" description:"rpc server address"`
 }
 
 // func getConfig() (*config, error) {

@@ -1,16 +1,14 @@
 package handler
 
 import (
-	"crypto/rsa"
+	"net"
+	"net/http"
 
-	"github.com/f044fs3t5w3f/metrics/internal/crypto"
-	"github.com/f044fs3t5w3f/metrics/internal/logger"
+	netTools "github.com/f044fs3t5w3f/metrics/pkg/net"
+
 	"github.com/f044fs3t5w3f/metrics/internal/repository"
 	"github.com/f044fs3t5w3f/metrics/internal/service"
-	"github.com/f044fs3t5w3f/metrics/pkg/compress"
-	"github.com/f044fs3t5w3f/metrics/pkg/sign"
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
 )
 
 // GetRouter returns router for mertics services
@@ -20,25 +18,31 @@ import (
 // - service: service for metrics
 // - key: key for sign middleware
 
-func GetRouter(storage repository.Storage, service *service.Service, key string, privateKey *rsa.PrivateKey) *chi.Mux {
+func GetRouter(
+	storage repository.Storage,
+	service *service.Service,
+	middlewares []func(http.Handler) http.Handler,
+	allowedSubnet *net.IPNet,
+) *chi.Mux {
 	// service := service.NewService(storage)
 	r := chi.NewRouter()
-	r.Use(logger.RequestLogger)
-	if privateKey != nil {
-		r.Use(crypto.GetDecryptMiddleware(privateKey))
+	if middlewares != nil {
+		r.Use(middlewares...)
 	}
-	if key != "" {
-		signMiddleware := sign.GetSignMiddleware(sign.GetSignFunc(key))
-		r.Use(signMiddleware)
-	}
-	r.Use(compress.Middleware)
-	r.Use(middleware.RealIP)
+
+	subnetMiddleware := netTools.GetCheckSubnetMiddleware(allowedSubnet)
+
 	r.Get("/ping", ping(service))
-	r.Post("/update/", UpdateJSON(service))
-	r.Post("/updates/", UpdatesJSON(service))
-	r.Post("/update/{metricType}/{mericName}/{metricValue}", Update(service))
-	r.Get("/value/{metricType}/{mericName}", Get(storage))
 	r.Post("/value/", GetJSON(storage))
+
+	localSubnetRoutes := chi.NewRouter()
+	localSubnetRoutes.Use(subnetMiddleware)
+	localSubnetRoutes.Get("/value/{metricType}/{mericName}", Get(storage))
+	localSubnetRoutes.Post("/update/", UpdateJSON(service))
+	localSubnetRoutes.Post("/updates/", UpdatesJSON(service))
+	localSubnetRoutes.Post("/update/{metricType}/{mericName}/{metricValue}", Update(service))
+	r.Mount("/", localSubnetRoutes)
+
 	r.Get("/", Index(storage))
 	// TODO: use service everywhere
 	return r

@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"crypto/rsa"
 	"database/sql"
 	"log"
 	"net"
@@ -21,7 +20,10 @@ import (
 	"github.com/f044fs3t5w3f/metrics/internal/repository/file"
 	"github.com/f044fs3t5w3f/metrics/internal/service"
 	"github.com/f044fs3t5w3f/metrics/internal/utils"
+	"github.com/f044fs3t5w3f/metrics/pkg/compress"
 	"github.com/f044fs3t5w3f/metrics/pkg/configuration"
+	"github.com/f044fs3t5w3f/metrics/pkg/sign"
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"go.uber.org/zap"
@@ -86,18 +88,34 @@ func main() {
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, os.Interrupt, syscall.SIGTERM, syscall.SIGTRAP, syscall.SIGQUIT, syscall.SIGQUIT)
 
-	var privateKey *rsa.PrivateKey
-	if config.CryptoFile != "" {
-		privateKey, err = crypto.GetPrivateKey(config.CryptoFile)
-		if err != nil {
-			log.Fatalf("getPrivateKey: %s", err.Error())
-		}
-	}
-
 	service := service.NewService(storage, auditPublisher)
 	service.AddCleanup(fileAuditCleanup)
 
-	router := handler.GetRouter(storage, service, config.Key, privateKey)
+	middlewares := []func(http.Handler) http.Handler{logger.RequestLogger}
+	if config.CryptoFile != "" {
+		privateKey, err := crypto.GetPrivateKey(config.CryptoFile)
+		if err != nil {
+			log.Fatalf("getPrivateKey: %s", err.Error())
+		}
+		if privateKey != nil {
+			middlewares = append(middlewares, crypto.GetDecryptMiddleware(privateKey))
+		}
+	}
+	if config.Key != "" {
+		signMiddleware := sign.GetSignMiddleware(sign.GetSignFunc(config.Key))
+		middlewares = append(middlewares, signMiddleware)
+	}
+	middlewares = append(middlewares, compress.Middleware, middleware.RealIP)
+
+	var subnet *net.IPNet
+	if config.TrustedSubnet != "" {
+		_, subnet, err = net.ParseCIDR(config.TrustedSubnet)
+		if err != nil {
+			log.Fatalf("ParseCIDR: %s", err.Error())
+		}
+	}
+
+	router := handler.GetRouter(storage, service, middlewares, subnet)
 
 	srv := &http.Server{
 		Addr:    config.RunAddr,

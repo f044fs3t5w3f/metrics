@@ -23,6 +23,7 @@ import (
 // data - any jsonable object
 //
 // key - secret key for signature
+
 func SendZippedSignedJSON(url string, data any, key string, publicKey *rsa.PublicKey) error {
 	body, err := getRequestBody(data)
 	if err != nil {
@@ -47,6 +48,12 @@ func SendZippedSignedJSON(url string, data any, key string, publicKey *rsa.Publi
 		return fmt.Errorf("creating request error: %s", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
+	ip, err := detectIP()
+	if err == nil {
+		req.Header.Set("X-Real-IP", ip)
+	} else {
+		return fmt.Errorf("failed to detect ip: %w", err)
+	}
 	req.Header.Set("Content-Encoding", "gzip")
 	req.Header.Set("Accept-Encoding", "gzip")
 	if len(hash) > 0 {
@@ -56,6 +63,9 @@ func SendZippedSignedJSON(url string, data any, key string, publicKey *rsa.Publi
 	response, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("POST: %w", err)
+	}
+	if response.StatusCode > 299 {
+		return fmt.Errorf("POST: status %d", response.StatusCode)
 	}
 	response.Body.Close()
 	return nil

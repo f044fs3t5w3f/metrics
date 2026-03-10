@@ -10,6 +10,7 @@ type Config struct {
 	RestoreOnBoot bool   `env:"RESTORE" flag:"r" jsonConfig:"restore" default:"false" description:"Restore data from storage on bootup"`
 	StoreInterval int64  `env:"STORE_INTERVAL" flag:"i" jsonConfig:"store_interval" default:"300" description:"Interval in seconds to store metrics"`
 	DatabaseDSN   string `env:"DATABASE_DSN" flag:"d" jsonConfig:"database_dsn" default:"" description:"Database connection string"`
+	TrustedSubnet string `env:"TRUSTED_SUBNET" flag:"t" jsonConfig:"trusted_subnet" default:""`
 }
 
 // func getConfig() (*config, error) {

@@ -15,7 +15,6 @@ import (
 	"github.com/f044fs3t5w3f/metrics/internal/crypto"
 	"github.com/f044fs3t5w3f/metrics/internal/handler"
 	"github.com/f044fs3t5w3f/metrics/internal/logger"
-	"github.com/f044fs3t5w3f/metrics/internal/models"
 	"github.com/f044fs3t5w3f/metrics/internal/repository"
 	dbRepo "github.com/f044fs3t5w3f/metrics/internal/repository/db"
 	"github.com/f044fs3t5w3f/metrics/internal/repository/file"
@@ -30,8 +29,6 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	// _ "net/http/pprof"
 )
 
@@ -145,7 +142,7 @@ func main() {
 			logger.Log.Fatal("couldn't start gRPC server", zap.Error(err))
 		}
 		s := grpc.NewServer()
-		pb.RegisterMetricsServer(s, &GRPCServer{Service: service})
+		pb.RegisterMetricsServer(s, &GRPCServer{Service: service, Subnet: subnet})
 		if err := s.Serve(listen); err != nil {
 			logger.Log.Fatal("couldn't serve gRPC server", zap.Error(err))
 		}
@@ -157,35 +154,4 @@ func main() {
 	defer shutdownCancel()
 	srv.Shutdown(shutdownCtx)
 	service.Close()
-}
-
-type GRPCServer struct {
-	pb.UnimplementedMetricsServer
-	Service *service.Service
-}
-
-func (s *GRPCServer) UpdateMetrics(ctx context.Context, req *pb.UpdateMetricsRequest) (*pb.UpdateMetricsResponse, error) {
-	metrics := make([]*models.Metrics, len(req.GetMetrics()))
-	for i, metric := range req.GetMetrics() {
-		metrics[i] = &models.Metrics{
-			ID: metric.GetId(),
-		}
-		switch metric.GetType() {
-		case pb.Metric_COUNTER:
-			metrics[i].MType = models.Counter
-			delta := metric.GetDelta()
-			metrics[i].Delta = &delta
-		case pb.Metric_GAUGE:
-			metrics[i].MType = models.Gauge
-			value := metric.GetValue()
-			metrics[i].Value = &value
-		default:
-			return nil, status.Errorf(codes.InvalidArgument, `unsupported type for metric with id %s `, metric.GetId())
-		}
-	}
-	err := s.Service.UpdateMetrics(ctx, metrics)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "Internal server error")
-	}
-	return &pb.UpdateMetricsResponse{}, nil
 }

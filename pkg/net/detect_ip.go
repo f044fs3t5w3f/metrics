@@ -11,7 +11,7 @@ var (
 	ErrAFewIPs     = errors.New("a few ip were detected")
 )
 
-func detectIP() (string, error) {
+func GetIP() (string, error) {
 	addrs, err := net.InterfaceAddrs()
 	if err != nil {
 		return "", fmt.Errorf("InterfaceAddrs: %w", err)

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"crypto/rsa"
 	"fmt"
 	"log"
@@ -12,15 +11,12 @@ import (
 	"syscall"
 	"time"
 
-	pb "github.com/f044fs3t5w3f/metrics/proto"
-	"go.uber.org/zap"
-
 	"github.com/f044fs3t5w3f/metrics/internal/agent"
 	"github.com/f044fs3t5w3f/metrics/internal/crypto"
 	"github.com/f044fs3t5w3f/metrics/internal/logger"
-	"github.com/f044fs3t5w3f/metrics/internal/models"
 	"github.com/f044fs3t5w3f/metrics/internal/utils"
 	"github.com/f044fs3t5w3f/metrics/pkg/configuration"
+	pb "github.com/f044fs3t5w3f/metrics/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -30,40 +26,6 @@ var (
 )
 
 type reportBatchFunc func(batch agent.MetricsBatch, wg *sync.WaitGroup)
-
-func reportBatchWithRPC(c pb.MetricsClient, batch agent.MetricsBatch) {
-	metrics := make([]*pb.Metric, len(batch))
-
-	for i, metric := range batch {
-		builder := pb.Metric_builder{}
-		builder.Id = metric.ID
-
-		switch metric.MType {
-		case models.Counter:
-			builder.Type = pb.Metric_COUNTER
-			if metric.Delta != nil {
-				builder.Delta = *metric.Delta
-			}
-
-		case models.Gauge:
-			builder.Type = pb.Metric_GAUGE
-			if metric.Value != nil {
-				builder.Value = *metric.Value
-			}
-		}
-
-		metrics[i] = builder.Build()
-	}
-
-	request := &pb.UpdateMetricsRequest{}
-	request.SetMetrics(metrics)
-
-	resp, err := c.UpdateMetrics(context.Background(), request)
-	fmt.Println(resp)
-	if err != nil {
-		logger.Log.Error("grpc request failed", zap.Error(err))
-	}
-}
 
 func getReportBatchFunc(config *Config) (reportBatchFunc, func(), error) {
 	if config.RPCServer != "" {
@@ -80,7 +42,7 @@ func getReportBatchFunc(config *Config) (reportBatchFunc, func(), error) {
 		}
 		return func(batch agent.MetricsBatch, wg *sync.WaitGroup) {
 			wg.Add(1)
-			reportBatchWithRPC(c, batch)
+			agent.ReportBatchWithRPC(c, batch)
 			wg.Done()
 		}, closeFunc, nil
 

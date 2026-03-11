@@ -48,7 +48,7 @@ func SendZippedSignedJSON(url string, data any, key string, publicKey *rsa.Publi
 		return fmt.Errorf("creating request error: %s", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
-	ip, err := detectIP()
+	ip, err := GetIP()
 	if err == nil {
 		req.Header.Set("X-Real-IP", ip)
 	} else {

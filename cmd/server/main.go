@@ -150,9 +150,13 @@ func main() {
 		}
 		s := grpc.NewServer(options...)
 		pb.RegisterMetricsServer(s, &GRPCServer{Service: service, Subnet: subnet})
-		if err := s.Serve(listen); err != nil {
-			logger.Log.Fatal("couldn't serve gRPC server", zap.Error(err))
-		}
+		defer s.Stop()
+		go func() {
+			if err := s.Serve(listen); err != nil {
+				logger.Log.Fatal("couldn't serve gRPC server", zap.Error(err))
+			}
+		}()
+
 	}
 
 	sig := <-signals

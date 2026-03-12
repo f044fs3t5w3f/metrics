@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/rsa"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -15,11 +16,50 @@ import (
 	"github.com/f044fs3t5w3f/metrics/internal/logger"
 	"github.com/f044fs3t5w3f/metrics/internal/utils"
 	"github.com/f044fs3t5w3f/metrics/pkg/configuration"
+	pb "github.com/f044fs3t5w3f/metrics/proto"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 var (
 	buildVersion, buildDate, buildCommit string
 )
+
+type reportBatchFunc func(batch agent.MetricsBatch, wg *sync.WaitGroup)
+
+func getReportBatchFunc(config *Config) (reportBatchFunc, func(), error) {
+	if config.RPCServer != "" {
+		conn, err := grpc.NewClient(config.RPCServer,
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
+			grpc.WithIdleTimeout(2*time.Second),
+		)
+		if err != nil {
+			return nil, nil, fmt.Errorf("grpc.NewClient, server %s: %w", config.RPCServer, err)
+		}
+		c := pb.NewMetricsClient(conn)
+		closeFunc := func() {
+			conn.Close()
+		}
+		return func(batch agent.MetricsBatch, wg *sync.WaitGroup) {
+			wg.Add(1)
+			agent.ReportBatchWithRPC(c, batch)
+			wg.Done()
+		}, closeFunc, nil
+
+	} else {
+		var publicKey *rsa.PublicKey = nil
+		if config.CryptoKeyPath != "" {
+			var err error
+			publicKey, err = crypto.GetPublicKey(config.CryptoKeyPath)
+			if err != nil {
+				return nil, nil, fmt.Errorf("crypto.GetPublicKey: %s", err.Error())
+			}
+		}
+		return func(batch agent.MetricsBatch, wg *sync.WaitGroup) {
+			agent.ReportBatch(config.Address, batch, config.Key, publicKey, wg)
+		}, nil, nil
+	}
+}
 
 func main() {
 	utils.PrintBuildInfo(os.Stdout, buildVersion, buildDate, buildCommit)
@@ -40,14 +80,6 @@ func main() {
 		pool = make(chan struct{}, config.RateLimit)
 	}
 
-	var publicKey *rsa.PublicKey = nil
-	if config.CryptoKeyPath != "" {
-		publicKey, err = crypto.GetPublicKey(config.CryptoKeyPath)
-		if err != nil {
-			log.Fatalf("getPublicKey: %s", err.Error())
-		}
-	}
-
 	lock := sync.Mutex{}
 	var counter int64 = 0
 	store := make([]agent.MetricsBatch, 0)
@@ -55,6 +87,15 @@ func main() {
 	if err != nil {
 		log.Fatalf("couldn't initialize logger: %s", err.Error())
 	}
+
+	reportBatch, cancel, err := getReportBatchFunc(&config)
+	if cancel != nil {
+		defer cancel()
+	}
+	if err != nil {
+		log.Fatalf("getReportBatchFunc: %s", err.Error())
+	}
+
 	go func() {
 		for {
 			if !canGoOn.Load() {
@@ -74,7 +115,7 @@ func main() {
 						<-pool
 					}()
 				}
-				agent.ReportBatch(config.Address, lastBatch, config.Key, publicKey, wg)
+				reportBatch(lastBatch, wg)
 			}()
 
 			time.Sleep(time.Duration(config.ReportInterval) * time.Second)

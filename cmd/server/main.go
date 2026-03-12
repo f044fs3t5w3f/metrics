@@ -141,7 +141,14 @@ func main() {
 		if err != nil {
 			logger.Log.Fatal("couldn't start gRPC server", zap.Error(err))
 		}
-		s := grpc.NewServer()
+		options := []grpc.ServerOption{}
+		if subnet != nil {
+			subnetCheckInterceptor := getSubnetCheckInterceptor(subnet)
+			if subnetCheckInterceptor != nil {
+				options = append(options, grpc.UnaryInterceptor(subnetCheckInterceptor))
+			}
+		}
+		s := grpc.NewServer(options...)
 		pb.RegisterMetricsServer(s, &GRPCServer{Service: service, Subnet: subnet})
 		if err := s.Serve(listen); err != nil {
 			logger.Log.Fatal("couldn't serve gRPC server", zap.Error(err))
